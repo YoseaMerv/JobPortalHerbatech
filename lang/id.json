@@ -1,0 +1,21 @@
+{
+    "Just now": "Baru saja",
+    "1 minute ago": "1 menit yang lalu",
+    ":count minutes ago": ":count menit yang lalu",
+    "1 hour ago": "1 jam yang lalu",
+    ":count hours ago": ":count jam yang lalu",
+    "1 day ago": "1 hari yang lalu",
+    ":count days ago": ":count hari yang lalu",
+    "1 week ago": "1 minggu yang lalu",
+    ":count weeks ago": ":count minggu yang lalu",
+    "1 month ago": "1 bulan yang lalu",
+    ":count months ago": ":count bulan yang lalu",
+    "1 year ago": "1 tahun yang lalu",
+    ":count years ago": ":count tahun yang lalu",
+    "monthly": "per bulan",
+    "yearly": "per tahun",
+    "full_time": "Penuh Waktu",
+    "part_time": "Paruh Waktu",
+    "contract": "Kontrak",
+    "internship": "Magang"
+}
