@@ -97,6 +97,7 @@ class JobController extends Controller
      */
     public function show(Job $job)
     {
+        $job->loadCount('applications');
         return view('company.jobs.show', compact('job'));
     }
 
