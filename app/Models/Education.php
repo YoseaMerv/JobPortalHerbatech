@@ -20,6 +20,12 @@ class Education extends Model
         'end_date',
     ];
 
+    // WAJIB: Agar format('Y') di Blade berfungsi
+    protected $casts = [
+        'start_date' => 'date',
+        'end_date' => 'date',
+    ];
+
     public function seekerProfile()
     {
         return $this->belongsTo(SeekerProfile::class);

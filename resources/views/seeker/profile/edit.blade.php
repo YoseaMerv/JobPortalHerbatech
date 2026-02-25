@@ -1,441 +1,249 @@
 @extends('layouts.seeker')
 
-@section('title', 'Kelola Profil')
-
 @section('content')
-<div class="container-fluid py-4">
-    <div class="row">
-        <!-- Personal Information & Stats -->
-        <div class="col-lg-4">
-            <div class="card shadow-sm border-0 mb-4">
-                <div class="card-body text-center p-4">
-                    <div class="position-relative d-inline-block mb-3">
-                        @if($profile->profile_picture)
-                            <img src="{{ asset('storage/' . $profile->profile_picture) }}" alt="Foto Profil" class="rounded-circle shadow-sm" style="width: 120px; height: 120px; object-fit: cover;">
-                        @else
-                            <div class="rounded-circle bg-light d-flex align-items-center justify-content-center mx-auto shadow-sm" style="width: 120px; height: 120px;">
-                                <i class="fas fa-user fa-4x text-secondary"></i>
+<div class="container py-5">
+    <div class="row g-4">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-4 sticky-top" style="top: 100px;">
+                <div class="card-body p-2">
+                    <div class="list-group list-group-flush" id="profileTabs" role="tablist">
+                        <a class="list-group-item list-group-item-action border-0 py-3 rounded-3 mb-1 active" data-bs-toggle="list" href="#identitas" role="tab">
+                            <div class="d-flex align-items-center">
+                                <div class="icon-box me-3"><i class="fas fa-user-circle"></i></div>
+                                <span class="fw-semibold">Identitas</span>
                             </div>
-                        @endif
+                        </a>
+                        <a class="list-group-item list-group-item-action border-0 py-3 rounded-3 mb-1" data-bs-toggle="list" href="#professional" role="tab">
+                            <div class="d-flex align-items-center">
+                                <div class="icon-box me-3"><i class="fas fa-id-badge"></i></div>
+                                <span class="fw-semibold">Bio & Skill</span>
+                            </div>
+                        </a>
+                        <a class="list-group-item list-group-item-action border-0 py-3 rounded-3 mb-1" data-bs-toggle="list" href="#history" role="tab">
+                            <div class="d-flex align-items-center">
+                                <div class="icon-box me-3"><i class="fas fa-briefcase"></i></div>
+                                <span class="fw-semibold">Pengalaman</span>
+                            </div>
+                        </a>
+                        <a class="list-group-item list-group-item-action border-0 py-3 rounded-3" data-bs-toggle="list" href="#documents" role="tab">
+                            <div class="d-flex align-items-center">
+                                <div class="icon-box me-3"><i class="fas fa-file-upload"></i></div>
+                                <span class="fw-semibold">Resume</span>
+                            </div>
+                        </a>
                     </div>
-                    <h4 class="fw-bold mb-1">{{ $user->name }}</h4>
-                    <p class="text-muted small mb-3">{{ $user->email }}</p>
-                    <div class="d-grid gap-2">
-                        <form action="{{ route('seeker.profile.update') }}" method="POST" enctype="multipart/form-data" id="photoForm">
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-9">
+            <div class="tab-content">
+                
+                <div class="tab-pane fade show active" id="identitas" role="tabpanel">
+                    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+                        <div class="card-body p-4 p-md-5">
+                            <h4 class="fw-bold mb-1 text-dark">Informasi Pribadi</h4>
+                            <p class="text-muted mb-4 small">Lengkapi data diri Anda untuk mempermudah HR menghubungi Anda.</p>
+                            
+                            <form action="{{ route('seeker.profile.update') }}" method="POST">
+                                @csrf
+                                @method('PATCH')
+                                <div class="row g-4">
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold small text-uppercase tracking-wider text-muted">Nama Lengkap</label>
+                                        <input type="text" name="name" class="form-control form-control-lg bg-light border-0 fs-6" value="{{ $user->name }}" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold small text-uppercase tracking-wider text-muted">Alamat Email</label>
+                                        <input type="email" class="form-control form-control-lg bg-light border-0 fs-6" value="{{ $user->email }}" readonly disabled>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold small text-uppercase tracking-wider text-muted">Nomor Telepon</label>
+                                        <input type="text" name="phone" class="form-control form-control-lg bg-light border-0 fs-6" value="{{ $profile?->phone }}" placeholder="Contoh: 08123456789">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold small text-uppercase tracking-wider text-muted">Lokasi Domisili</label>
+                                        <input type="text" name="home_location_details" class="form-control form-control-lg bg-light border-0 fs-6" value="{{ $profile?->home_location_details }}" placeholder="Contoh: Jakarta Selatan">
+                                    </div>
+                                </div>
+                                <div class="text-end mt-5">
+                                    <button type="submit" class="btn btn-primary px-5 py-2 fw-bold rounded-3 shadow-sm">Simpan Perubahan</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="professional" role="tabpanel">
+                    <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5">
+                        <h4 class="fw-bold mb-1 text-dark">Profil Profesional</h4>
+                        <p class="text-muted mb-4 small">Berikan ringkasan singkat mengenai nilai jual Anda.</p>
+                        
+                        <form action="{{ route('seeker.profile.update') }}" method="POST">
                             @csrf
-                            @method('PUT')
-                            <input type="file" name="profile_picture" id="profile_picture" class="d-none" onchange="document.getElementById('photoForm').submit()">
-                            <button type="button" class="btn btn-outline-primary btn-sm rounded-pill" onclick="document.getElementById('profile_picture').click()">
-                                <i class="fas fa-camera me-1"></i> Ubah Foto
-                            </button>
+                            @method('PATCH')
+                            <div class="mb-5">
+                                <label class="form-label fw-bold small text-uppercase tracking-wider text-muted">Tentang Saya</label>
+                                <textarea name="summary" class="form-control bg-light border-0 p-3" rows="6" style="resize: none;" placeholder="Tuliskan pengalaman singkat Anda...">{{ $profile->summary }}</textarea>
+                            </div>
+                            
+                            <div>
+                                <label class="form-label fw-bold small text-uppercase tracking-wider text-muted mb-3">Bahasa yang Dikuasai</label>
+                                <div class="row g-3">
+                                    @php $langs = ['Indonesia', 'Inggris', 'Mandarin', 'Jepang']; @endphp
+                                    @foreach($langs as $lang)
+                                        <div class="col-6 col-md-3">
+                                            <div class="language-card border rounded-3 p-3 text-center position-relative transition-all">
+                                                <input class="form-check-input stretched-link d-none" type="checkbox" name="languages[]" value="{{ $lang }}" id="lang{{ $lang }}" 
+                                                {{ is_array($profile?->languages) && in_array($lang, $profile->languages) ? 'checked' : '' }}>
+                                                <label class="form-check-label fw-semibold stretched-link" for="lang{{ $lang }}">{{ $lang }}</label>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                            <div class="text-end mt-5">
+                                <button type="submit" class="btn btn-primary px-5 py-2 fw-bold rounded-3 shadow-sm">Simpan Profil</button>
+                            </div>
                         </form>
                     </div>
                 </div>
-            </div>
 
-            <!-- Resume/CV Section -->
-            <div class="card shadow-sm border-0 mb-4">
-                <div class="card-header bg-transparent border-0 pt-4 px-4">
-                    <h5 class="fw-bold mb-0">Resume Profesional</h5>
-                </div>
-                <div class="card-body p-4">
-                    @if($profile->resume_path)
-                        <div class="d-flex align-items-center p-3 bg-light rounded mb-3">
-                            <i class="fas fa-file-pdf fa-2x text-danger me-3"></i>
-                            <div class="flex-grow-1 overflow-hidden">
-                                <p class="mb-0 fw-bold text-truncate">Resume_Saya.pdf</p>
-                                <small class="text-muted">Diunggah {{ $profile->updated_at->diffForHumans() }}</small>
-                            </div>
-                        </div>
-                    @else
-                        <div class="text-center py-3 mb-3 border border-dashed rounded bg-light">
-                            <i class="fas fa-file-upload fa-2x text-muted mb-2"></i>
-                            <p class="text-muted small mb-0">Belum ada resume yang diunggah</p>
-                        </div>
-                    @endif
-
-                    <form action="{{ route('seeker.profile.upload-resume') }}" method="POST" enctype="multipart/form-data">
-                        @csrf
-                        <div class="input-group input-group-sm">
-                            <input type="file" name="resume" class="form-control" accept=".pdf,.doc,.docx" required>
-                            <button type="submit" class="btn btn-primary">Unggah</button>
-                        </div>
-                        <small class="text-muted d-block mt-2">PDF, DOC, DOCX (Maks 2MB)</small>
-                    </form>
-                </div>
-            </div>
-        </div>
-
-        <!-- Main Profile Forms -->
-        <div class="col-lg-8">
-            <!-- Basic Information -->
-            <div class="card shadow-sm border-0 mb-4">
-                <div class="card-header bg-transparent border-0 pt-4 px-4">
-                    <h5 class="fw-bold mb-0">Informasi Dasar</h5>
-                </div>
-                <div class="card-body p-4">
-                    <form action="{{ route('seeker.profile.update') }}" method="POST">
-                        @csrf
-                        @method('PUT')
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <label class="form-label small fw-bold">Nomor Telepon</label>
-                                <input type="text" name="phone" class="form-control" value="{{ old('phone', $profile->phone) }}" placeholder="+62...">
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label small fw-bold">Lokasi/Alamat</label>
-                                <input type="text" name="address" class="form-control" value="{{ old('address', $profile->address) }}" placeholder="Contoh: Jakarta, Indonesia">
-                            </div>
-                            <div class="col-12">
-                                <label class="form-label small fw-bold">Bio Singkat</label>
-                                <textarea name="bio" class="form-control" rows="4" placeholder="Jelaskan secara singkat latar belakang profesional Anda...">{{ old('bio', $profile->bio) }}</textarea>
-                            </div>
-                            <div class="col-12 text-end">
-                                <button type="submit" class="btn btn-primary px-4">Simpan Perubahan</button>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-            </div>
-
-            <!-- Education & Experience Tabs -->
-            <div class="card shadow-sm border-0 mb-4">
-                <div class="card-body p-0">
-                    <ul class="nav nav-pills p-3 bg-light" id="profileTabs" role="tablist">
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link active rounded-pill px-4" data-bs-toggle="pill" data-bs-target="#education" type="button">Pendidikan</button>
-                        </li>
-                        <li class="nav-item ms-2" role="presentation">
-                            <button class="nav-link rounded-pill px-4" data-bs-toggle="pill" data-bs-target="#experience" type="button">Pengalaman</button>
-                        </li>
-                        <li class="nav-item ms-2" role="presentation">
-                            <button class="nav-link rounded-pill px-4" data-bs-toggle="pill" data-bs-target="#skills" type="button">Keahlian</button>
-                        </li>
-                        <li class="nav-item ms-2" role="presentation">
-                            <button class="nav-link rounded-pill px-4" data-bs-toggle="pill" data-bs-target="#certificates" type="button">Sertifikat</button>
-                        </li>
-                    </ul>
-                    <div class="tab-content p-4">
-                        <!-- Education Tab -->
-                        <div class="tab-pane fade show active" id="education">
+                <div class="tab-pane fade" id="history" role="tabpanel">
+                    <div class="card border-0 shadow-sm rounded-4 mb-4 overflow-hidden">
+                        <div class="card-body p-4 p-md-5">
                             <div class="d-flex justify-content-between align-items-center mb-4">
-                                <h6 class="fw-bold mb-0">Riwayat Pendidikan</h6>
-                                <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addEducationModal">
-                                    <i class="fas fa-plus me-1"></i> Tambah Pendidikan
+                                <div>
+                                    <h4 class="fw-bold mb-0 text-dark">Pengalaman Kerja</h4>
+                                    <small class="text-muted">Riwayat karier profesional Anda.</small>
+                                </div>
+                                <button class="btn btn-outline-primary btn-sm rounded-3 px-3 py-2 fw-bold" data-bs-toggle="modal" data-bs-target="#modalExperience">
+                                    <i class="fas fa-plus me-2"></i> Tambah
                                 </button>
                             </div>
 
-                            @forelse($educations as $edu)
-                                <div class="d-flex border-start border-primary border-4 p-3 bg-light rounded mb-3">
-                                    <div class="flex-grow-1">
-                                        <h6 class="fw-bold mb-1">{{ $edu->degree }}</h6>
-                                        <p class="mb-0 small text-dark">{{ $edu->institution }}</p>
-                                        <p class="mb-0 smaller text-muted">{{ \Carbon\Carbon::parse($edu->start_date)->translatedFormat('M Y') }} - {{ $edu->end_date ? \Carbon\Carbon::parse($edu->end_date)->translatedFormat('M Y') : 'Sekarang' }}</p>
-                                    </div>
-                                    <div>
-                                        <form action="{{ route('seeker.profile.education.destroy', $edu->id) }}" method="POST">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="btn btn-link text-danger p-0" onclick="return confirm('Hapus data ini?')">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
-                                        </form>
-                                    </div>
-                                </div>
-                            @empty
-                                <div class="text-center py-4">
-                                    <p class="text-muted small">Tidak ada data pendidikan yang ditemukan.</p>
-                                </div>
-                            @endforelse
-                        </div>
-
-                        <!-- Experience Tab -->
-                        <div class="tab-pane fade" id="experience">
-                            <div class="d-flex justify-content-between align-items-center mb-4">
-                                <h6 class="fw-bold mb-0">Pengalaman Kerja</h6>
-                                <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addExperienceModal">
-                                    <i class="fas fa-plus me-1"></i> Tambah Pengalaman
-                                </button>
-                            </div>
-
-                            @forelse($experiences as $exp)
-                                <div class="d-flex border-start border-success border-4 p-3 bg-light rounded mb-3">
-                                    <div class="flex-grow-1">
-                                        <h6 class="fw-bold mb-1">{{ $exp->job_title }}</h6>
-                                        <p class="mb-0 small text-dark">{{ $exp->company_name }} | {{ $exp->location }}</p>
-                                        <p class="mb-0 smaller text-muted">{{ \Carbon\Carbon::parse($exp->start_date)->translatedFormat('M Y') }} - {{ $exp->end_date ? \Carbon\Carbon::parse($exp->end_date)->translatedFormat('M Y') : 'Sekarang' }}</p>
-                                        @if($exp->description)
-                                            <p class="mt-2 mb-0 smaller text-muted">{{ Str::limit($exp->description, 150) }}</p>
-                                        @endif
-                                    </div>
-                                    <div>
-                                        <form action="{{ route('seeker.profile.experience.destroy', $exp->id) }}" method="POST">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="btn btn-link text-danger p-0" onclick="return confirm('Hapus data ini?')">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
-                                        </form>
-                                    </div>
-                                </div>
-                            @empty
-                                <div class="text-center py-4">
-                                    <p class="text-muted small">Tidak ada data pengalaman kerja yang ditemukan.</p>
-                                </div>
-                            @endforelse
-                        </div>
-
-                        <!-- Skills Tab -->
-                        <div class="tab-pane fade" id="skills">
-                             <div class="d-flex justify-content-between align-items-center mb-4">
-                                <h6 class="fw-bold mb-0">Keahlian Saya</h6>
-                                <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addSkillModal">
-                                    <i class="fas fa-plus me-1"></i> Tambah Keahlian
-                                </button>
-                            </div>
-
-                            <div class="d-flex flex-wrap gap-2">
-                                @forelse($skills as $skill)
-                                    <div class="badge bg-light text-dark border p-2 fw-normal d-flex align-items-center rounded-pill">
-                                        <span class="me-2">{{ $skill->skill_name }}</span>
-                                        <span class="text-primary small fw-bold me-2">({{ match($skill->proficiency_level) {
-                                            'beginner' => 'Pemula',
-                                            'intermediate' => 'Menengah',
-                                            'advanced' => 'Lanjutan',
-                                            'expert' => 'Ahli',
-                                            default => ucfirst($skill->proficiency_level)
-                                        } }})</span>
-                                        <form action="{{ route('seeker.profile.skill.destroy', $skill->id) }}" method="POST" class="d-inline">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="btn-close" style="font-size: 0.5rem;" onclick="return confirm('Hapus keahlian?')"></button>
-                                        </form>
+                            <div class="timeline">
+                                @forelse($profile->experiences as $exp)
+                                    <div class="timeline-item pb-4 position-relative ps-4">
+                                        <div class="timeline-dot"></div>
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div>
+                                                <h6 class="fw-bold text-dark mb-0">{{ $exp->job_title }}</h6>
+                                                <p class="text-primary mb-1 small fw-semibold">{{ $exp->company_name }}</p>
+                                                <small class="text-muted fw-medium">{{ $exp->start_date?->format('M Y') }} — {{ $exp->end_date ? $exp->end_date->format('M Y') : 'Sekarang' }}</small>
+                                                <p class="mt-2 text-secondary small opacity-75">{{ $exp->description }}</p>
+                                            </div>
+                                            <form action="{{ route('seeker.profile.experience.destroy', $exp) }}" method="POST">
+                                                @csrf @method('DELETE')
+                                                <button type="submit" class="btn btn-link text-danger p-0 opacity-50 hover-opacity-100" onclick="return confirm('Hapus riwayat ini?')">
+                                                    <i class="fas fa-trash-alt"></i>
+                                                </button>
+                                            </form>
+                                        </div>
                                     </div>
                                 @empty
-                                    <div class="w-100 text-center py-4">
-                                        <p class="text-muted small">Belum ada keahlian yang ditambahkan.</p>
-                                    </div>
+                                    <p class="text-center text-muted py-4">Belum ada pengalaman kerja.</p>
                                 @endforelse
                             </div>
                         </div>
-                        
-                        <!-- Certificates Tab -->
-                        <div class="tab-pane fade" id="certificates">
-                            <div class="d-flex justify-content-between align-items-center mb-4">
-                                <h6 class="fw-bold mb-0">Sertifikat & Dokumen Pendukung</h6>
-                                <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addCertificateModal">
-                                    <i class="fas fa-plus me-1"></i> Tambah Sertifikat
-                                </button>
-                            </div>
+                    </div>
 
-                            @forelse($certificates as $cert)
-                                <div class="d-flex border-start border-warning border-4 p-3 bg-light rounded mb-3">
-                                    <div class="flex-grow-1">
-                                        <h6 class="fw-bold mb-1">{{ $cert->name }}</h6>
-                                        <p class="mb-0 small text-dark">{{ $cert->issuer }}</p>
-                                        <p class="mb-0 smaller text-muted">Diterbitkan: {{ \Carbon\Carbon::parse($cert->issued_date)->translatedFormat('M Y') }}</p>
-                                        @if($cert->description)
-                                            <p class="mt-2 mb-0 smaller text-muted">{{ Str::limit($cert->description, 150) }}</p>
-                                        @endif
-                                        @if($cert->file_path)
-                                            <a href="{{ asset('storage/' . $cert->file_path) }}" target="_blank" class="btn btn-link btn-sm p-0 mt-1 text-decoration-none">
-                                                <i class="fas fa-paperclip me-1"></i> Lihat Dokumen
-                                            </a>
-                                        @endif
-                                    </div>
-                                    <div>
-                                        <form action="{{ route('seeker.profile.certificate.destroy', $cert->id) }}" method="POST">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="btn btn-link text-danger p-0" onclick="return confirm('Hapus sertifikat ini?')">
-                                                <i class="fas fa-trash"></i>
+                    <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <div>
+                                <h4 class="fw-bold mb-0 text-dark">Pendidikan</h4>
+                                <small class="text-muted">Riwayat pendidikan akademik Anda.</small>
+                            </div>
+                            <button class="btn btn-outline-primary btn-sm rounded-3 px-3 py-2 fw-bold" data-bs-toggle="modal" data-bs-target="#modalEducation">
+                                <i class="fas fa-plus me-2"></i> Tambah
+                            </button>
+                        </div>
+
+                        <div class="list-group list-group-flush border-0">
+                            @forelse($profile->educations as $edu)
+                                <div class="list-group-item border-0 p-0 mb-4 bg-transparent">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h6 class="fw-bold text-dark mb-1">{{ $edu->institution }}</h6>
+                                            <p class="text-muted small mb-0">{{ $edu->degree }} • {{ $edu->field_of_study }}</p>
+                                            <small class="text-primary fw-medium small">{{ $edu->start_date?->format('Y') }} — {{ $edu->end_date ? $edu->end_date->format('Y') : 'Masih Menempuh' }}</small>
+                                        </div>
+                                        <form action="{{ route('seeker.profile.education.destroy', $edu) }}" method="POST">
+                                            @csrf @method('DELETE')
+                                            <button type="submit" class="btn btn-link text-danger p-0 opacity-50" onclick="return confirm('Hapus riwayat ini?')">
+                                                <i class="fas fa-trash-alt"></i>
                                             </button>
                                         </form>
                                     </div>
                                 </div>
                             @empty
-                                <div class="text-center py-4">
-                                    <p class="text-muted small">Belum ada sertifikat yang ditambahkan.</p>
-                                </div>
+                                <p class="text-center text-muted py-4">Belum ada riwayat pendidikan.</p>
                             @endforelse
                         </div>
                     </div>
                 </div>
+
+                <div class="tab-pane fade" id="documents" role="tabpanel">
+                    <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5">
+                        <h4 class="fw-bold mb-1 text-dark">Resume & Portofolio</h4>
+                        <p class="text-muted mb-5 small">Pastikan file terbaru diunggah agar perusahaan dapat mengunduhnya.</p>
+                        
+                        <form action="{{ route('seeker.profile.update') }}" method="POST" enctype="multipart/form-data">
+                            @csrf
+                            @method('PATCH')
+                            
+                            <div class="upload-area border-2 border-dashed rounded-4 p-5 text-center bg-light transition-all mb-4">
+                                <i class="fas fa-cloud-upload-alt fa-3x text-primary opacity-25 mb-3"></i>
+                                <h6 class="fw-bold text-dark mb-1">Klik untuk pilih file CV</h6>
+                                <p class="text-muted small mb-4">PDF, DOCX (Maksimal 5MB)</p>
+                                <input type="file" name="resume" class="form-control d-none" id="resumeInput">
+                                <button type="button" class="btn btn-white shadow-sm border rounded-3 px-4 py-2" onclick="document.getElementById('resumeInput').click()">Pilih File</button>
+                            </div>
+
+                            @if($profile->resume_path)
+                                <div class="d-flex align-items-center p-4 bg-white border rounded-4 shadow-sm mb-4">
+                                    <div class="icon-box bg-danger-subtle text-danger rounded-3 p-3 me-3">
+                                        <i class="fas fa-file-pdf fa-2x"></i>
+                                    </div>
+                                    <div class="overflow-hidden">
+                                        <p class="fw-bold text-dark mb-0 text-truncate small">{{ $profile->resume_filename ?? 'CV_Terunggah.pdf' }}</p>
+                                        <a href="{{ asset('storage/' . $profile->resume_path) }}" target="_blank" class="text-primary text-decoration-none small fw-bold">Buka File</a>
+                                    </div>
+                                </div>
+                            @endif
+
+                            <div class="text-end">
+                                <button type="submit" class="btn btn-primary px-5 py-2 fw-bold rounded-3 shadow-sm">Upload & Simpan</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
             </div>
         </div>
     </div>
 </div>
 
-<!-- Modals -->
-<!-- Add Education Modal -->
-<div class="modal fade" id="addEducationModal" tabindex="-1">
-    <div class="modal-dialog">
-        <form action="{{ route('seeker.profile.education.store') }}" method="POST" class="modal-content">
-            @csrf
-            <div class="modal-header">
-                <h5 class="modal-title fw-bold">Tambah Pendidikan</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div class="mb-3">
-                    <label class="form-label small fw-bold">Gelar/Kualifikasi</label>
-                    <input type="text" name="degree" class="form-control" placeholder="Contoh: Sarjana Ilmu Komputer" required>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label small fw-bold">Institusi/Universitas</label>
-                    <input type="text" name="institution" class="form-control" placeholder="Contoh: Universitas Indonesia" required>
-                </div>
-                <div class="row mb-3">
-                    <div class="col-6">
-                        <label class="form-label small fw-bold">Tanggal Mulai</label>
-                        <input type="date" name="start_date" class="form-control" required>
-                    </div>
-                    <div class="col-6">
-                        <label class="form-label small fw-bold">Tanggal Selesai (estimasi)</label>
-                        <input type="date" name="end_date" class="form-control">
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer border-0">
-                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
-                <button type="submit" class="btn btn-primary">Simpan Pendidikan</button>
-            </div>
-        </form>
-    </div>
-</div>
-
-<!-- Add Experience Modal -->
-<div class="modal fade" id="addExperienceModal" tabindex="-1">
-    <div class="modal-dialog">
-        <form action="{{ route('seeker.profile.experience.store') }}" method="POST" class="modal-content">
-            @csrf
-            <div class="modal-header">
-                <h5 class="modal-title fw-bold">Tambah Pengalaman</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div class="mb-3">
-                    <label class="form-label small fw-bold">Judul Pekerjaan</label>
-                    <input type="text" name="job_title" class="form-control" placeholder="Contoh: Software Engineer" required>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label small fw-bold">Nama Perusahaan</label>
-                    <input type="text" name="company_name" class="form-control" required>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label small fw-bold">Lokasi</label>
-                    <input type="text" name="location" class="form-control" placeholder="Contoh: Jakarta (Onsite/Remote)">
-                </div>
-                <div class="row mb-3">
-                    <div class="col-6">
-                        <label class="form-label small fw-bold">Tanggal Mulai</label>
-                        <input type="date" name="start_date" class="form-control" required>
-                    </div>
-                    <div class="col-6">
-                        <label class="form-label small fw-bold">Tanggal Selesai</label>
-                        <input type="date" name="end_date" class="form-control">
-                    </div>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label small fw-bold">Deskripsi</label>
-                    <textarea name="description" class="form-control" rows="3"></textarea>
-                </div>
-            </div>
-            <div class="modal-footer border-0">
-                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
-                <button type="submit" class="btn btn-primary">Simpan Pengalaman</button>
-            </div>
-        </form>
-    </div>
-</div>
-
-<!-- Add Skill Modal -->
-<div class="modal fade" id="addSkillModal" tabindex="-1">
-    <div class="modal-dialog modal-sm">
-        <form action="{{ route('seeker.profile.skill.store') }}" method="POST" class="modal-content">
-            @csrf
-            <div class="modal-header">
-                <h5 class="modal-title fw-bold">Tambah Keahlian</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div class="mb-3">
-                    <label class="form-label small fw-bold">Nama Keahlian</label>
-                    <input type="text" name="skill_name" class="form-control" required placeholder="Contoh: PHP, Laravel">
-                </div>
-                <div class="mb-3">
-                    <label class="form-label small fw-bold">Kemahiran</label>
-                    <select name="proficiency_level" class="form-select">
-                        <option value="beginner">Pemula</option>
-                        <option value="intermediate" selected>Menengah</option>
-                        <option value="advanced">Lanjutan</option>
-                        <option value="expert">Ahli</option>
-                    </select>
-                </div>
-            </div>
-            <div class="modal-footer border-0">
-                <button type="submit" class="btn btn-primary w-100">Tambah Keahlian</button>
-            </div>
-        </form>
-    </div>
-</div>
-<!-- Add Certificate Modal -->
-<div class="modal fade" id="addCertificateModal" tabindex="-1">
-    <div class="modal-dialog">
-        <form action="{{ route('seeker.profile.certificate.store') }}" method="POST" enctype="multipart/form-data" class="modal-content">
-            @csrf
-            <div class="modal-header">
-                <h5 class="modal-title fw-bold">Tambah Sertifikat</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div class="mb-3">
-                    <label class="form-label small fw-bold">Nama Sertifikat/Dokumen</label>
-                    <input type="text" name="name" class="form-control" placeholder="Contoh: Sertifikat Kompetensi Web" required>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label small fw-bold">Penerbit/Institusi</label>
-                    <input type="text" name="issuer" class="form-control" required>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label small fw-bold">Tanggal Terbit</label>
-                    <input type="date" name="issued_date" class="form-control" required>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label small fw-bold">File (Opsional)</label>
-                    <input type="file" name="file" class="form-control" accept=".pdf,.jpg,.jpeg,.png">
-                    <small class="text-muted">PDF, JPG, PNG (Maks 2MB)</small>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label small fw-bold">Keterangan Tambahan</label>
-                    <textarea name="description" class="form-control" rows="3"></textarea>
-                </div>
-            </div>
-            <div class="modal-footer border-0">
-                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
-                <button type="submit" class="btn btn-primary">Simpan Sertifikat</button>
-            </div>
-        </form>
-    </div>
-</div>
-@endsection
-
-@push('styles')
+{{-- Custom Styles for Premium Feel --}}
 <style>
-    .nav-pills .nav-link.active {
-        background-color: var(--bs-primary);
-        box-shadow: 0 4px 10px rgba(13, 110, 253, 0.2);
-    }
-    .nav-pills .nav-link {
-        color: #555;
-        font-weight: 500;
-        transition: all 0.2s;
-    }
-    .border-dashed {
-        border-style: dashed !important;
-    }
-    .smaller {
-        font-size: 0.75rem;
-    }
+    body { background-color: #f8f9fa; }
+    .card { border-radius: 1rem; }
+    .list-group-item.active { background-color: #0d6efd !important; color: white !important; }
+    .list-group-item.active .icon-box { background-color: rgba(255, 255, 255, 0.2); }
+    .icon-box { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 10px; background-color: #f1f3f5; color: #495057; }
+    .transition-all { transition: all 0.3s ease; }
+    .language-card input:checked + label { background-color: #0d6efd; color: white; border-color: #0d6efd; }
+    .language-card label { padding: 12px; border: 2px solid #e9ecef; border-radius: 12px; cursor: pointer; display: block; }
+    .timeline-item::before { content: ""; position: absolute; left: 0; top: 0; height: 100%; width: 2px; background-color: #e9ecef; }
+    .timeline-dot { position: absolute; left: -4px; top: 5px; width: 10px; height: 10px; background-color: #0d6efd; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 0 4px rgba(13, 110, 253, 0.1); }
+    .border-dashed { border-style: dashed !important; border-width: 2px !important; border-color: #dee2e6 !important; }
+    .upload-area:hover { background-color: #f1f3f5 !important; border-color: #0d6efd !important; }
+    .hover-opacity-100:hover { opacity: 1 !important; }
+    .tracking-wider { letter-spacing: 0.05em; }
 </style>
-@endpush
+
+{{-- Modals --}}
+@include('seeker.profile.partials.modal-experience')
+@include('seeker.profile.partials.modal-education')
+
+@endsection

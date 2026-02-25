@@ -6,24 +6,32 @@ use App\Http\Controllers\Controller;
 use App\Models\Job;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Models\JobCategory; 
+use App\Models\JobLocation;
 
 class JobController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Job::with('company')->where('status', 'published')->where('deadline', '>=', now());
+        // Eager load company untuk menghindari N+1 query
+        $query = Job::with('company')->where('status', 'published');
 
+        // Filter berdasarkan keyword judul atau nama perusahaan
         if ($request->filled('keyword')) {
-            $query->where('title', 'like', '%' . $request->keyword . '%')
-                  ->orWhereHas('company', function ($q) use ($request) {
-                      $q->where('company_name', 'like', '%' . $request->keyword . '%');
+            $query->where(function($q) use ($request) {
+                $q->where('title', 'like', '%' . $request->keyword . '%')
+                  ->orWhereHas('company', function ($c) use ($request) {
+                      $c->where('name', 'like', '%' . $request->keyword . '%');
                   });
+            });
         }
 
+        // Filter Lokasi
         if ($request->filled('location')) {
             $query->where('location_id', $request->location);
         }
 
+        // Filter Kategori
         if ($request->filled('category')) {
             $query->where('category_id', $request->category);
         }
@@ -46,8 +54,10 @@ class JobController extends Controller
         return view('seeker.jobs.show', compact('job', 'hasApplied', 'isSaved'));
     }
 
+    
     public function apply(Request $request, Job $job)
-    {
+    {   
+        /** @var \App\Models\User $user */
         $user = Auth::user();
 
         if ($user->applications()->where('job_id', $job->id)->exists()) {

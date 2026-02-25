@@ -13,6 +13,7 @@ class SeekerProfile extends Model
         'user_id',
         'phone',
         'address',
+        'home_location_details',
         'city',
         'province',
         'country',
@@ -26,7 +27,10 @@ class SeekerProfile extends Model
         'skills', // Legacy column, kept for backup
         'experience', // Legacy column, kept for backup
         'bio',
+        'summary',     
+        'languages',
         'resume_path',
+        'resume_filename',
         'portfolio_url',
         'profile_picture',
         'is_public',
@@ -40,6 +44,7 @@ class SeekerProfile extends Model
     protected $casts = [
         'birth_date' => 'date',
         'is_public' => 'boolean',
+        'languages' => 'array',
     ];
 
     public function user()

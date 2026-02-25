@@ -19,6 +19,12 @@ class Experience extends Model
         'description',
     ];
 
+    // WAJIB: Agar format('M Y') di Blade berfungsi
+    protected $casts = [
+        'start_date' => 'date',
+        'end_date' => 'date',
+    ];
+
     public function seekerProfile()
     {
         return $this->belongsTo(SeekerProfile::class);

@@ -4,90 +4,84 @@ namespace App\Http\Controllers\Seeker;
 
 use App\Http\Controllers\Controller;
 use App\Models\SeekerProfile;
-use App\Models\Education;
 use App\Models\Experience;
-use App\Models\Skill;
-use App\Models\Certificate;
+use App\Models\Education;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 
 class ProfileController extends Controller
 {
     public function edit()
     {
-        $user = auth()->user();
-        $profile = $user->seekerProfile ?? SeekerProfile::create(['user_id' => $user->id]);
-        $educations = $profile->educations ?? [];
-        $experiences = $profile->experiences ?? [];
-        $skills = $profile->skills()->get();
-        $certificates = $profile->certificates()->get();
-        
-        return view('seeker.profile.edit', compact('user', 'profile', 'educations', 'experiences', 'skills', 'certificates'));
+        $user = Auth::user();
+
+        // Mengambil profil atau membuat baru jika belum ada datanya di database
+        $profile = SeekerProfile::firstOrCreate(
+            ['user_id' => $user->id],
+            ['is_public' => true] // Nilai default
+        );
+
+        // Eager load relasi setelah profil dipastikan ada
+        $profile->load(['experiences', 'educations', 'skills', 'certificates']);
+
+        return view('seeker.profile.edit', compact('user', 'profile'));
     }
 
     public function update(Request $request)
     {
+        $user = Auth::user();
+        $profile = $user->seekerProfile;
+
+        // Pastikan validasi mencakup semua field yang mungkin dikirim
         $validated = $request->validate([
+            'name' => 'sometimes|required|string|max:255',
             'phone' => 'nullable|string|max:20',
-            'address' => 'nullable|string|max:255',
-            'bio' => 'nullable|string',
-            'profile_picture' => 'nullable|image|max:2048',
+            'home_location_details' => 'nullable|string|max:255',
+            'summary' => 'nullable|string',
+            'languages' => 'nullable|array',
+            'resume' => 'nullable|file|mimes:pdf,doc,docx,txt,rtf|max:5120',
         ]);
 
-        $user = auth()->user();
-        $profile = $user->seekerProfile ?? SeekerProfile::create(['user_id' => $user->id]);
-
-        if ($request->hasFile('profile_picture')) {
-            if ($profile->profile_picture) {
-                Storage::disk('public')->delete($profile->profile_picture);
-            }
-            $validated['profile_picture'] = $request->file('profile_picture')->store('profiles', 'public');
+        // Update Nama User jika ada di request
+        if ($request->has('name')) {
+            $user->update(['name' => $validated['name']]);
         }
 
-        $profile->update($validated);
+        // Handle Upload Resume (Poin 10)
+        if ($request->hasFile('resume')) {
+            if ($profile->resume_path) {
+                Storage::disk('public')->delete($profile->resume_path);
+            }
+            $file = $request->file('resume');
+            $path = $file->store('resumes', 'public');
+            $profile->resume_path = $path;
+            $profile->resume_filename = $file->getClientOriginalName();
+            $profile->save();
+        }
 
-        return back()->with('success', 'Profile updated successfully.');
+        // Update data profil dengan aman (hanya data yang ada di request)
+        // Ini mencegah error "Undefined array key"
+        $profile->update($request->only([
+            'phone', 
+            'home_location_details', 
+            'summary', 
+            'languages'
+        ]));
+
+        return back()->with('success', 'Profil berhasil diperbarui!');
     }
 
-    public function uploadResume(Request $request)
+    public function storeSkill(Request $request)
     {
         $request->validate([
-            'resume' => 'required|file|mimes:pdf,doc,docx|max:2048',
+            'name' => 'required|string|max:255',
+            'level' => 'required|string',
         ]);
 
-        $user = auth()->user();
-        $profile = $user->seekerProfile ?? SeekerProfile::create(['user_id' => $user->id]);
+        Auth::user()->seekerProfile->skills()->create($request->all());
 
-        if ($profile->resume_path) {
-            Storage::disk('public')->delete($profile->resume_path);
-        }
-
-        $path = $request->file('resume')->store('resumes', 'public');
-        $profile->update(['resume_path' => $path]);
-
-        return back()->with('success', 'Resume uploaded successfully.');
-    }
-
-    public function storeEducation(Request $request)
-    {
-        $validated = $request->validate([
-            'degree' => 'required|string|max:255',
-            'institution' => 'required|string|max:255',
-            'field_of_study' => 'nullable|string|max:255',
-            'start_date' => 'required|date',
-            'end_date' => 'nullable|date|after:start_date',
-        ]);
-
-        $profile = auth()->user()->seekerProfile ?? SeekerProfile::create(['user_id' => auth()->id()]);
-        $profile->educations()->create($validated);
-
-        return back()->with('success', 'Education added successfully.');
-    }
-
-    public function destroyEducation(Education $education)
-    {
-        $education->delete();
-        return back()->with('success', 'Education deleted successfully.');
+        return back()->with('success', 'Keahlian berhasil ditambahkan!');
     }
 
     public function storeExperience(Request $request)
@@ -95,70 +89,55 @@ class ProfileController extends Controller
         $validated = $request->validate([
             'job_title' => 'required|string|max:255',
             'company_name' => 'required|string|max:255',
-            'location' => 'nullable|string|max:255',
             'start_date' => 'required|date',
-            'end_date' => 'nullable|date|after:start_date',
+            'end_date' => 'nullable|date|after_or_equal:start_date',
             'description' => 'nullable|string',
         ]);
 
-        $profile = auth()->user()->seekerProfile ?? SeekerProfile::create(['user_id' => auth()->id()]);
+        // Ambil atau buat profil, lalu simpan data sekali saja
+        $profile = SeekerProfile::firstOrCreate(['user_id' => Auth::id()]);
         $profile->experiences()->create($validated);
 
-        return back()->with('success', 'Experience added successfully.');
+        return back()->with('success', 'Riwayat karier berhasil ditambahkan!');
+    }
+
+    public function storeEducation(Request $request)
+    {
+        $validated = $request->validate([
+            'institution' => 'required|string|max:255',
+            'degree' => 'required|string|max:255',
+            'field_of_study' => 'nullable|string|max:255',
+            'start_date' => 'required|date',
+            'end_date' => 'nullable|date|after_or_equal:start_date',
+        ]);
+        
+        // Pastikan profil seeker ada
+        $profile = SeekerProfile::firstOrCreate(['user_id' => Auth::id()]);
+
+        // Simpan data melalui relasi
+        $profile->educations()->create($validated);
+
+        return back()->with('success', 'Riwayat pendidikan berhasil ditambahkan!');
     }
 
     public function destroyExperience(Experience $experience)
     {
-        $experience->delete();
-        return back()->with('success', 'Experience deleted successfully.');
-    }
-
-    public function storeSkill(Request $request)
-    {
-        $validated = $request->validate([
-            'skill_name' => 'required|string|max:255',
-            'proficiency_level' => 'nullable|in:beginner,intermediate,advanced,expert',
-        ]);
-
-        $profile = auth()->user()->seekerProfile ?? SeekerProfile::create(['user_id' => auth()->id()]);
-        $profile->skills()->create($validated);
-
-        return back()->with('success', 'Skill added successfully.');
-    }
-
-    public function destroySkill(Skill $skill)
-    {
-        $skill->delete();
-        return back()->with('success', 'Skill deleted successfully.');
-    }
-
-    public function storeCertificate(Request $request)
-    {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'issuer' => 'required|string|max:255',
-            'issued_date' => 'required|date',
-            'description' => 'nullable|string',
-            'file' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
-        ]);
-
-        $profile = auth()->user()->seekerProfile ?? SeekerProfile::create(['user_id' => auth()->id()]);
+        // Pastikan hanya pemilik yang bisa menghapus
+        if ($experience->seeker_profile_id !== auth()->user()->seekerProfile->id) {
+            abort(403);
+        }
         
-        if ($request->hasFile('file')) {
-            $validated['file_path'] = $request->file('file')->store('certificates', 'public');
-        }
-
-        $profile->certificates()->create($validated);
-
-        return back()->with('success', 'Certificate added successfully.');
+        $experience->delete();
+        return back()->with('success', 'Riwayat karier berhasil dihapus.');
     }
 
-    public function destroyCertificate(Certificate $certificate)
+    public function destroyEducation(Education $education)
     {
-        if ($certificate->file_path) {
-            Storage::disk('public')->delete($certificate->file_path);
+        if ($education->seeker_profile_id !== auth()->user()->seekerProfile->id) {
+            abort(403);
         }
-        $certificate->delete();
-        return back()->with('success', 'Certificate deleted successfully.');
+
+        $education->delete();
+        return back()->with('success', 'Riwayat pendidikan berhasil dihapus.');
     }
 }

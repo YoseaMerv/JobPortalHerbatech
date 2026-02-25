@@ -1,128 +1,110 @@
 @extends('layouts.seeker')
 
 @section('content')
-<div class="row justify-content-center">
-    <div class="col-lg-8">
-        <div class="card border-0 shadow-sm mb-4">
-            <div class="card-body p-4">
-                <div class="mb-4">
-                    <h3 class="mb-1">{{ $job->title }}</h3>
-                    <div class="text-muted">
-                        <i class="fas fa-briefcase me-1"></i> {{ ucfirst(str_replace('_', ' ', $job->job_type)) }}
+<div class="container py-4">
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
+                <div class="card-body p-4 p-lg-5">
+                    <div class="d-flex align-items-center mb-4">
+                        <div class="bg-light rounded-4 p-3 me-4 text-center" style="width: 80px; height: 80px;">
+                            @if($job->company?->company_logo)
+                                <img src="{{ asset('storage/' . $job->company->company_logo) }}" class="img-fluid" alt="Logo">
+                            @else
+                                <i class="fas fa-building fa-2x text-muted opacity-50 mt-2"></i>
+                            @endif
+                        </div>
+                        <div>
+                            <h3 class="fw-bold text-dark mb-1">{{ $job->title }}</h3>
+                            <p class="text-primary fw-bold mb-0">{{ $job->company->name }}</p>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-5">
+                        <div class="col-6 col-md-3 text-center border-end">
+                            <small class="text-muted d-block text-uppercase fw-bold fs-9 tracking-wider">Gaji</small>
+                            <span class="fw-bold text-dark small">{{ $job->salary_formatted }}</span>
+                        </div>
+                        <div class="col-6 col-md-3 text-center border-end">
+                            <small class="text-muted d-block text-uppercase fw-bold fs-9 tracking-wider">Tipe</small>
+                            <span class="fw-bold text-dark small">{{ ucfirst($job->job_type) }}</span>
+                        </div>
+                        <div class="col-6 col-md-3 text-center border-end">
+                            <small class="text-muted d-block text-uppercase fw-bold fs-9 tracking-wider">Lokasi</small>
+                            <span class="fw-bold text-dark small">{{ $job->location?->name ?? 'Remote' }}</span>
+                        </div>
+                        <div class="col-6 col-md-3 text-center">
+                            <small class="text-muted d-block text-uppercase fw-bold fs-9 tracking-wider">Sisa Waktu</small>
+                            <span class="fw-bold text-danger small">
+                                {{ $job->deadline ? $job->deadline->diffInDays(now()) . ' Hari' : 'N/A' }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="mb-5">
+                        <h6 class="fw-bold text-dark border-start border-4 border-primary ps-3 mb-3 text-uppercase tracking-wider">Deskripsi Pekerjaan</h6>
+                        <div class="text-secondary lh-lg fs-7">
+                            {!! nl2br(e($job->description)) !!}
+                        </div>
+                    </div>
+
+                    <div class="mb-5">
+                        <h6 class="fw-bold text-dark border-start border-4 border-primary ps-3 mb-3 text-uppercase tracking-wider">Persyaratan</h6>
+                        <div class="text-secondary lh-lg fs-7">
+                            {!! nl2br(e($job->requirements)) !!}
+                        </div>
                     </div>
                 </div>
-
-                <div class="row mb-4">
-                    <div class="col-md-4 mb-2">
-                        <div class="p-3 bg-light rounded text-center">
-                            <i class="fas fa-map-marker-alt text-primary fa-lg mb-2"></i>
-                            <div class="fw-bold">Lokasi</div>
-                            <div class="small">{{ $job->location->name }}</div>
-                        </div>
-                    </div>
-                    <div class="col-md-4 mb-2">
-                        <div class="p-3 bg-light rounded text-center">
-                            <i class="fas fa-dollar-sign text-success fa-lg mb-2"></i>
-                            <div class="fw-bold">Gaji</div>
-                            <div class="small">{{ number_format($job->salary_min) }} - {{ number_format($job->salary_max) }}</div>
-                        </div>
-                    </div>
-                    <div class="col-md-4 mb-2">
-                        <div class="p-3 bg-light rounded text-center">
-                            <i class="fas fa-briefcase text-info fa-lg mb-2"></i>
-                            <div class="fw-bold">Tipe</div>
-                            <div class="small">{{ match($job->job_type) {
-                                'full_time' => 'Penuh Waktu',
-                                'part_time' => 'Paruh Waktu',
-                                'contract' => 'Kontrak',
-                                'freelance' => 'Freelance',
-                                'internship' => 'Magang',
-                                default => ucfirst(str_replace('_', ' ', $job->job_type))
-                            } }}</div>
-                        </div>
-                    </div>
-                </div>
-
-                <h5 class="mb-3 border-bottom pb-2">Deskripsi</h5>
-                <p class="mb-4">{!! nl2br(e($job->description)) !!}</p>
-
-                <h5 class="mb-3 border-bottom pb-2">Persyaratan</h5>
-                <p class="mb-4">{!! nl2br(e($job->requirements)) !!}</p>
-
-                <h5 class="mb-3 border-bottom pb-2">Tanggung Jawab</h5>
-                <p class="mb-4">{!! nl2br(e($job->responsibilities)) !!}</p>
             </div>
         </div>
-    </div>
 
-    <div class="col-lg-4">
-        <div class="card border-0 shadow-sm mb-4">
-            <div class="card-body">
-                <h5 class="card-title mb-3">Aksi Pekerjaan</h5>
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm rounded-4 p-4 mb-4 sticky-top" style="top: 100px;">
+                <h6 class="fw-bold text-dark mb-4">Aksi Cepat</h6>
                 
                 @if($hasApplied)
-                    <div class="alert alert-success">
-                        <i class="fas fa-check-circle me-1"></i> Anda telah melamar pekerjaan ini.
+                    <div class="alert alert-info border-0 rounded-3 small py-3">
+                        <i class="fas fa-check-circle me-2"></i> Anda sudah melamar lowongan ini.
+                    </div>
+                @elseif($job->isExpired())
+                    <div class="alert alert-danger border-0 rounded-3 small py-3">
+                        <i class="fas fa-exclamation-triangle me-2"></i> Lowongan ini sudah berakhir.
                     </div>
                 @else
-                    <form action="{{ route('seeker.jobs.apply', $job->id) }}" method="POST" class="mb-3">
+                    <form action="{{ route('seeker.jobs.apply', $job) }}" method="POST">
                         @csrf
                         <div class="mb-3">
-                            <label class="form-label small fw-bold">Surat Lamaran (Opsional)</label>
-                            <textarea name="cover_letter" class="form-control" rows="3" placeholder="Beritahu perusahaan mengapa Anda cocok untuk posisi ini..."></textarea>
+                            <label class="form-label small fw-bold text-muted">Surat Lamaran / Catatan (Opsional)</label>
+                            <textarea name="cover_letter" class="form-control bg-light border-0 fs-7" rows="4" placeholder="Tuliskan alasan singkat mengapa Anda tertarik..."></textarea>
                         </div>
-                        <div class="d-grid">
-                            <button type="submit" class="btn btn-primary btn-lg">Lamar Sekarang</button>
-                        </div>
+                        <button type="submit" class="btn btn-primary w-100 py-2 rounded-3 fw-bold shadow-sm mb-3">Lamar Sekarang</button>
                     </form>
                 @endif
 
-                <div class="d-grid">
+                <div class="d-flex gap-2">
                     @if($isSaved)
-                        <form action="{{ route('seeker.jobs.unsave', $job->id) }}" method="POST">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="btn btn-outline-danger w-100">
-                                <i class="fas fa-heart text-danger"></i> Hapus dari Simpanan
-                            </button>
+                        <form action="{{ route('seeker.jobs.unsave', $job) }}" method="POST" class="flex-grow-1">
+                            @csrf @method('DELETE')
+                            <button type="submit" class="btn btn-outline-danger w-100 rounded-3 fw-bold fs-7"><i class="fas fa-bookmark me-2"></i> Hapus Simpan</button>
                         </form>
                     @else
-                        <form action="{{ route('seeker.jobs.save', $job->id) }}" method="POST">
+                        <form action="{{ route('seeker.jobs.save', $job) }}" method="POST" class="flex-grow-1">
                             @csrf
-                            <button type="submit" class="btn btn-outline-primary w-100">
-                                <i class="far fa-heart"></i> Simpan Lowongan
-                            </button>
+                            <button type="submit" class="btn btn-outline-secondary w-100 rounded-3 fw-bold fs-7"><i class="far fa-bookmark me-2"></i> Simpan</button>
                         </form>
                     @endif
+                    <button class="btn btn-light rounded-3 px-3" onclick="copyToClipboard('{{ url()->current() }}')">
+                        <i class="fas fa-share-alt"></i>
+                    </button>
                 </div>
-            </div>
-        </div>
-
-        <div class="card border-0 shadow-sm mb-4">
-            <div class="card-body">
-                <div class="text-center">
-                    <p class="small text-muted mb-2">Bagikan lowongan ini:</p>
-                    <div class="d-flex justify-content-center gap-2">
-                        <button class="btn btn-sm btn-outline-primary rounded-circle"><i class="fab fa-facebook-f"></i></button>
-                        <button class="btn btn-sm btn-outline-info rounded-circle"><i class="fab fa-twitter"></i></button>
-                        <button class="btn btn-sm btn-outline-primary rounded-circle"><i class="fab fa-linkedin-in"></i></button>
-                        <button class="btn btn-sm btn-outline-secondary rounded-circle" onclick="copyToClipboard('{{ route('public.jobs.show', $job->id) }}')" title="Salin Tautan"><i class="fas fa-link"></i></button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="card border-0 shadow-sm">
-            <div class="card-body">
-                <h5 class="card-title mb-3">Tentang Kami</h5>
-                <p class="small text-muted mb-3">{{ Str::limit($job->company->company_description, 150) }}</p>
-                <ul class="list-unstyled small mb-0">
-                    <li class="mb-2"><i class="fas fa-globe me-2 text-muted"></i> <a href="{{ $job->company->company_website }}" target="_blank">Website</a></li>
-                    <li class="mb-2"><i class="fas fa-industry me-2 text-muted"></i> {{ $job->company->industry }}</li>
-                    <li><i class="fas fa-users me-2 text-muted"></i> {{ $job->company->company_size }} Karyawan</li>
-                </ul>
             </div>
         </div>
     </div>
 </div>
+
+<style>
+    .fs-7 { font-size: 0.9rem; }
+    .fs-9 { font-size: 0.65rem; }
+    .tracking-wider { letter-spacing: 0.08rem; }
+</style>
 @endsection

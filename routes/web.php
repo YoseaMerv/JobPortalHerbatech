@@ -100,40 +100,43 @@ Route::prefix('company')->name('company.')->middleware(['auth', 'verified', 'rol
     Route::get('applications/{application}/download-cv', [\App\Http\Controllers\Company\ApplicationController::class, 'downloadCv'])->name('applications.download-cv');
 });
 
+
 // Seeker Routes
 Route::prefix('seeker')->name('seeker.')->middleware(['auth', 'verified', 'role:seeker'])->group(function () {
     Route::get('/dashboard', [SeekerDashboardController::class, 'index'])->name('dashboard');
     
-    // Profile
+    // Profile Management (Poin 1-4, 9-10)
     Route::get('/profile', [\App\Http\Controllers\Seeker\ProfileController::class, 'edit'])->name('profile.edit');
-    Route::put('/profile', [\App\Http\Controllers\Seeker\ProfileController::class, 'update'])->name('profile.update');
-    Route::post('/profile/resume', [\App\Http\Controllers\Seeker\ProfileController::class, 'uploadResume'])->name('profile.upload-resume');
+    // Gunakan PATCH agar sesuai dengan form yang kita buat sebelumnya
+    Route::patch('/profile', [\App\Http\Controllers\Seeker\ProfileController::class, 'update'])->name('profile.update');
     
-    // Detailed Profile Routes
+    // Detailed Profile Routes (Relasi hasMany)
+    // Pendidikan (Poin 6)
     Route::post('/profile/education', [\App\Http\Controllers\Seeker\ProfileController::class, 'storeEducation'])->name('profile.education.store');
     Route::delete('/profile/education/{education}', [\App\Http\Controllers\Seeker\ProfileController::class, 'destroyEducation'])->name('profile.education.destroy');
     
+    // Pengalaman Karier (Poin 5)
     Route::post('/profile/experience', [\App\Http\Controllers\Seeker\ProfileController::class, 'storeExperience'])->name('profile.experience.store');
     Route::delete('/profile/experience/{experience}', [\App\Http\Controllers\Seeker\ProfileController::class, 'destroyExperience'])->name('profile.experience.destroy');
     
+    // Keahlian (Poin 8)
     Route::post('/profile/skill', [\App\Http\Controllers\Seeker\ProfileController::class, 'storeSkill'])->name('profile.skill.store');
     Route::delete('/profile/skill/{skill}', [\App\Http\Controllers\Seeker\ProfileController::class, 'destroySkill'])->name('profile.skill.destroy');
 
+    // Sertifikat (Poin 7)
     Route::post('/profile/certificate', [\App\Http\Controllers\Seeker\ProfileController::class, 'storeCertificate'])->name('profile.certificate.store');
     Route::delete('/profile/certificate/{certificate}', [\App\Http\Controllers\Seeker\ProfileController::class, 'destroyCertificate'])->name('profile.certificate.destroy');
     
-    // Jobs
+    // Lowongan & Lamaran (Poin Alur Pendaftaran)
     Route::get('/jobs', [\App\Http\Controllers\Seeker\JobController::class, 'index'])->name('jobs.index');
     Route::get('/jobs/{job}', [\App\Http\Controllers\Seeker\JobController::class, 'show'])->name('jobs.show');
     Route::post('/jobs/{job}/apply', [\App\Http\Controllers\Seeker\JobController::class, 'apply'])->name('jobs.apply');
     Route::post('/jobs/{job}/save', [\App\Http\Controllers\Seeker\JobController::class, 'save'])->name('jobs.save');
     Route::delete('/jobs/{job}/unsave', [\App\Http\Controllers\Seeker\JobController::class, 'unsave'])->name('jobs.unsave');
     
-    // Applications
     Route::get('/applications', [\App\Http\Controllers\Seeker\ApplicationController::class, 'index'])->name('applications.index');
     Route::get('/applications/{application}', [\App\Http\Controllers\Seeker\ApplicationController::class, 'show'])->name('applications.show');
     Route::delete('/applications/{application}', [\App\Http\Controllers\Seeker\ApplicationController::class, 'destroy'])->name('applications.destroy');
     
-    // Saved Jobs
     Route::get('/saved-jobs', [\App\Http\Controllers\Seeker\SavedJobController::class, 'index'])->name('saved-jobs.index');
 });

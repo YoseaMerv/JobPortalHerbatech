@@ -4,6 +4,8 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Pagination\Paginator;
+use Illuminate\Support\Facades\View;
+use App\Models\Company;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -21,20 +23,14 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Paginator::useBootstrapFive();
-        
         \Carbon\Carbon::setLocale('id');
-        setlocale(LC_TIME, 'id_ID');
-        
+
         try {
             if (\Illuminate\Support\Facades\Schema::hasTable('companies')) {
                 $company = \App\Models\Company::first();
-                // If no company exists yet, avoid error by not sharing or sharing null
-                if ($company) {
-                    \Illuminate\Support\Facades\View::share('company', $company);
-                }
+                // Cukup gunakan ini saja untuk semua layout
+                \Illuminate\Support\Facades\View::share('company', $company);
             }
-        } catch (\Exception $e) {
-            // Handle migration edge cases silently
-        }
+        } catch (\Exception $e) {}
     }
 }
