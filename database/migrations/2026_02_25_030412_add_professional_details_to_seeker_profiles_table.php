@@ -23,7 +23,7 @@ return new class extends Migration
             if (!Schema::hasColumn('seeker_profiles', 'resume_filename')) {
                 $table->string('resume_filename')->nullable()->after('resume_path');
             }
-            
+
             // 4. Domisili/Lokasi Rumah (Sesuai Poin 2 rencana Anda)
             // Model Anda sudah punya 'city', kita pastikan ada kolom untuk koordinat atau detail tambahan jika perlu
             if (!Schema::hasColumn('seeker_profiles', 'home_location_details')) {

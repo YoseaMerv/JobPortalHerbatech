@@ -18,7 +18,7 @@
                         <option value="">Semua Lokasi</option>
                         {{-- Ubah \App\Models\Location menjadi \App\Models\JobLocation --}}
                         @foreach(\App\Models\JobLocation::all() as $loc)
-                            <option value="{{ $loc->id }}" {{ request('location') == $loc->id ? 'selected' : '' }}>{{ $loc->name }}</option>
+                        <option value="{{ $loc->id }}" {{ request('location') == $loc->id ? 'selected' : '' }}>{{ $loc->name }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -28,7 +28,7 @@
                         <option value="">Semua Kategori</option>
                         {{-- Ubah \App\Models\Category menjadi \App\Models\JobCategory --}}
                         @foreach(\App\Models\JobCategory::all() as $cat)
-                            <option value="{{ $cat->id }}" {{ request('category') == $cat->id ? 'selected' : '' }}>{{ $cat->name }}</option>
+                        <option value="{{ $cat->id }}" {{ request('category') == $cat->id ? 'selected' : '' }}>{{ $cat->name }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -41,39 +41,39 @@
 
     <div class="row g-4">
         @forelse($jobs as $job)
-            <div class="col-md-4">
-                <div class="card border-0 shadow-sm rounded-4 h-100 transition-all hover-shadow">
-                    <div class="card-body p-4">
-                        <div class="d-flex justify-content-between align-items-start mb-3">
-                            <div class="company-logo bg-light rounded-3 p-2 text-center" style="width: 50px; height: 50px;">
-                                <i class="fas fa-building text-muted opacity-50 fa-lg mt-2"></i>
-                            </div>
-                            <span class="badge bg-primary-subtle text-primary rounded-pill px-3 py-2 small fw-bold">
-                                {{ ucfirst($job->job_type) }}
-                            </span>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-4 h-100 transition-all hover-shadow">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div class="company-logo bg-light rounded-3 p-2 text-center" style="width: 50px; height: 50px;">
+                            <i class="fas fa-building text-muted opacity-50 fa-lg mt-2"></i>
                         </div>
-                        
-                        <h6 class="fw-bold text-dark mb-1 text-truncate">{{ $job->title }}</h6>
-                        <p class="text-primary small fw-bold mb-3">{{ $job->company->name ?? 'Perusahaan' }}</p>
+                        <span class="badge bg-primary-subtle text-primary rounded-pill px-3 py-2 small fw-bold">
+                            {{ ucfirst($job->job_type) }}
+                        </span>
+                    </div>
 
-                        <div class="text-muted fs-8 mb-4">
-                            <div class="mb-1"><i class="fas fa-map-marker-alt me-2 text-secondary"></i> {{ $job->location->name ?? 'Lokasi tidak diatur' }}</div>
-                            <div><i class="fas fa-money-bill-wave me-2 text-success"></i> Rp {{ number_format($job->salary_min, 0, ',', '.') }} - {{ number_format($job->salary_max, 0, ',', '.') }}</div>
-                        </div>
+                    <h6 class="fw-bold text-dark mb-1 text-truncate">{{ $job->title }}</h6>
+                    <p class="text-primary small fw-bold mb-3">{{ $job->company->name ?? 'Perusahaan' }}</p>
 
-                        <div class="d-flex justify-content-between align-items-center mt-auto pt-3 border-top">
-                            <small class="text-muted fs-9">{{ $job->created_at->diffForHumans() }}</small>
-                            <a href="{{ route('seeker.jobs.show', $job->id) }}" class="btn btn-outline-primary btn-sm rounded-pill px-3 fw-bold">Detail</a>
-                        </div>
+                    <div class="text-muted fs-8 mb-4">
+                        <div class="mb-1"><i class="fas fa-map-marker-alt me-2 text-secondary"></i> {{ $job->location->name ?? 'Lokasi tidak diatur' }}</div>
+                        <div><i class="fas fa-money-bill-wave me-2 text-success"></i> Rp {{ number_format($job->salary_min, 0, ',', '.') }} - {{ number_format($job->salary_max, 0, ',', '.') }}</div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mt-auto pt-3 border-top">
+                        <small class="text-muted fs-9">{{ $job->created_at->diffForHumans() }}</small>
+                        <a href="{{ route('seeker.jobs.show', $job->id) }}" class="btn btn-outline-primary btn-sm rounded-pill px-3 fw-bold">Detail</a>
                     </div>
                 </div>
             </div>
+        </div>
         @empty
-            <div class="col-12 text-center py-5">
-                <img src="https://illustrations.popsy.co/gray/crashed-error.svg" alt="No jobs" width="180" class="mb-3 opacity-50">
-                <h5 class="text-muted">Tidak ada lowongan ditemukan</h5>
-                <p class="text-secondary small">Coba sesuaikan kriteria pencarian Anda.</p>
-            </div>
+        <div class="col-12 text-center py-5">
+            <img src="https://illustrations.popsy.co/gray/crashed-error.svg" alt="No jobs" width="180" class="mb-3 opacity-50">
+            <h5 class="text-muted">Tidak ada lowongan ditemukan</h5>
+            <p class="text-secondary small">Coba sesuaikan kriteria pencarian Anda.</p>
+        </div>
         @endforelse
     </div>
 
@@ -83,10 +83,25 @@
 </div>
 
 <style>
-    .hover-shadow:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.08) !important; }
-    .fs-7 { font-size: 0.9rem; }
-    .fs-8 { font-size: 0.8rem; }
-    .fs-9 { font-size: 0.75rem; }
-    .transition-all { transition: all 0.3s ease; }
+    .hover-shadow:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08) !important;
+    }
+
+    .fs-7 {
+        font-size: 0.9rem;
+    }
+
+    .fs-8 {
+        font-size: 0.8rem;
+    }
+
+    .fs-9 {
+        font-size: 0.75rem;
+    }
+
+    .transition-all {
+        transition: all 0.3s ease;
+    }
 </style>
 @endsection

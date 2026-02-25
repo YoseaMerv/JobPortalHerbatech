@@ -16,22 +16,28 @@ class ProfileController extends Controller
     {
         $user = Auth::user();
 
-        // Mengambil profil atau membuat baru jika belum ada datanya di database
         $profile = SeekerProfile::firstOrCreate(
             ['user_id' => $user->id],
-            ['is_public' => true] // Nilai default
+            ['is_public' => true]
         );
 
-        // Eager load relasi setelah profil dipastikan ada
         $profile->load(['experiences', 'educations', 'skills', 'certificates']);
 
-        return view('seeker.profile.edit', compact('user', 'profile'));
+        // Gabungkan isLocked dan profile ke dalam satu return
+        $isLocked = $user->applications()->where('status', 'pending')->exists();
+
+        return view('seeker.profile.edit', compact('user', 'profile', 'isLocked'));
     }
 
     public function update(Request $request)
     {
         $user = Auth::user();
         $profile = $user->seekerProfile;
+
+        // Jika profil terkunci, larang update
+        if (Auth::user()->applications()->where('status', 'pending')->exists()) {
+            return redirect()->back()->with('error', 'Profil tidak dapat diubah selama Anda memiliki lamaran aktif.');
+        }
 
         // Pastikan validasi mencakup semua field yang mungkin dikirim
         $validated = $request->validate([

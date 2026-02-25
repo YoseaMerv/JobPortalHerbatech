@@ -9,7 +9,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('companies', function (Blueprint $table) {
-            $table->string('company_profile_url')->nullable()->after('instagram');
+            $table->string('company_profile_url')->nullable(); // Tambahkan ->nullable()
         });
     }
 

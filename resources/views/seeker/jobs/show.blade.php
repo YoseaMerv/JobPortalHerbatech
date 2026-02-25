@@ -66,21 +66,16 @@
                     <div class="alert alert-info border-0 rounded-3 small py-3">
                         <i class="fas fa-check-circle me-2"></i> Anda sudah melamar lowongan ini.
                     </div>
-                @elseif($job->isExpired())
+                    @elseif($job->isExpired())
                     <div class="alert alert-danger border-0 rounded-3 small py-3">
                         <i class="fas fa-exclamation-triangle me-2"></i> Lowongan ini sudah berakhir.
                     </div>
-                @else
-                    <form action="{{ route('seeker.jobs.apply', $job) }}" method="POST">
-                        @csrf
-                        <div class="mb-3">
-                            <label class="form-label small fw-bold text-muted">Surat Lamaran / Catatan (Opsional)</label>
-                            <textarea name="cover_letter" class="form-control bg-light border-0 fs-7" rows="4" placeholder="Tuliskan alasan singkat mengapa Anda tertarik..."></textarea>
-                        </div>
-                        <button type="submit" class="btn btn-primary w-100 py-2 rounded-3 fw-bold shadow-sm mb-3">Lamar Sekarang</button>
-                    </form>
+                @else       
+                    {{-- Hapus <form> lama yang menggunakan route('seeker.jobs.apply') --}}
+                    <a href="{{ route('seeker.jobs.apply.form', $job) }}" class="btn btn-primary w-100 py-3 rounded-3 fw-bold shadow-sm mb-3">
+                        Lamar Sekarang
+                    </a>
                 @endif
-
                 <div class="d-flex gap-2">
                     @if($isSaved)
                         <form action="{{ route('seeker.jobs.unsave', $job) }}" method="POST" class="flex-grow-1">

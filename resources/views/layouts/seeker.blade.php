@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,28 +9,29 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    
+
     <link href="{{ asset('css/futuristic.css') }}" rel="stylesheet">
     @if(isset($company->favicon) && $company->favicon)
-        <link rel="icon" href="{{ asset('storage/' . $company->favicon) }}" type="image/x-icon"/>
+    <link rel="icon" href="{{ asset('storage/' . $company->favicon) }}" type="image/x-icon" />
     @endif
     @stack('styles')
 </head>
+
 <body>
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg sticky-top">
         <div class="container">
-        <a class="navbar-brand fw-bold" href="{{ route('seeker.dashboard') }}">
-            {{-- Cek apakah variabel $company ada dan tidak null --}}
-            @if(isset($company) && $company && $company->company_logo)
+            <a class="navbar-brand fw-bold" href="{{ route('seeker.dashboard') }}">
+                {{-- Cek apakah variabel $company ada dan tidak null --}}
+                @if(isset($company) && $company && $company->company_logo)
                 <img src="{{ asset('storage/' . $company->company_logo) }}" alt="Logo" class="me-2 rounded-circle" style="width: 30px; height: 30px;">
-            @else
+                @else
                 <i class="fas fa-briefcase me-2"></i>
-            @endif
-            
-            {{-- Tampilkan nama perusahaan atau fallback teks jika data kosong --}}
-            {{ $company->company_name ?? 'Job Portal Herbatech' }}
-        </a>
+                @endif
+
+                {{-- Tampilkan nama perusahaan atau fallback teks jika data kosong --}}
+                {{ $company->company_name ?? 'Job Portal Herbatech' }}
+            </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
@@ -53,7 +55,9 @@
                         <ul class="dropdown-menu dropdown-menu-end">
                             <li><a class="dropdown-item" href="{{ route('seeker.dashboard') }}">Dashboard</a></li>
                             <li><a class="dropdown-item" href="{{ route('seeker.profile.edit') }}">Profil Saya</a></li>
-                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
                             <li>
                                 <form method="POST" action="{{ route('logout') }}">
                                     @csrf
@@ -75,17 +79,17 @@
     <!-- Main Content -->
     <div class="container py-4" style="min-height: 80vh;">
         @if(session('success'))
-            <div class="alert alert-success alert-dismissible fade show" role="alert">
-                {{ session('success') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            {{ session('success') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
         @endif
 
         @if(session('error'))
-            <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                {{ session('error') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            {{ session('error') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
         @endif
 
         @yield('content')
@@ -93,17 +97,17 @@
 
     <!-- Footer -->
     <footer class="bg-dark text-white py-4 mt-auto">
-    <div class="container">
-        <div class="row">
-            <div class="col-md-6">
-                {{-- Gunakan operator ?-> (null safe) atau ?? untuk keamanan --}}
-                <h5>{{ $company?->company_name ?? 'Job Portal Herbatech' }}</h5>
-                <p>{{ Str::limit($company?->company_description ?? 'Situs pencarian kerja terpercaya.', 100) }}</p>
-            </div>
-            <div class="col-md-6 text-md-end">
-                {{-- Tambahkan ?? 'Job Portal' di sini agar tidak error --}}
-                <p>&copy; {{ date('Y') }} {{ $company?->company_name ?? 'Job Portal Herbatech' }}. All rights reserved.</p>
-            </div>
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    {{-- Gunakan operator ?-> (null safe) atau ?? untuk keamanan --}}
+                    <h5>{{ $company?->company_name ?? 'Job Portal Herbatech' }}</h5>
+                    <p>{{ Str::limit($company?->company_description ?? 'Situs pencarian kerja terpercaya.', 100) }}</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    {{-- Tambahkan ?? 'Job Portal' di sini agar tidak error --}}
+                    <p>&copy; {{ date('Y') }} {{ $company?->company_name ?? 'Job Portal Herbatech' }}. All rights reserved.</p>
+                </div>
             </div>
         </div>
     </footer>
@@ -159,7 +163,7 @@
             textArea.select();
             try {
                 var successful = document.execCommand('copy');
-                if(successful) {
+                if (successful) {
                     alert('Tautan lowongan telah disalin ke papan klip!');
                 } else {
                     alert('Gagal menyalin tautan.');
@@ -172,4 +176,5 @@
     </script>
     @stack('scripts')
 </body>
+
 </html>

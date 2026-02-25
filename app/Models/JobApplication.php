@@ -13,13 +13,14 @@ class JobApplication extends Model
         'job_id',
         'user_id',
         'cv_path',
-        'cover_letter',
+        'cover_letter_path',
         'status',
-        'notes',
+        'answers',
     ];
 
     protected $casts = [
         'applied_at' => 'datetime',
+        'answers' => 'array',
     ];
 
     // Relationships

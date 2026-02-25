@@ -4,7 +4,7 @@
 <div class="row">
     <div class="col-md-8">
         <h4 class="mb-4">Selamat datang kembali, {{ Auth::user()->name }}!</h4>
-        
+
         <div class="row mb-4">
             <div class="col-md-4">
                 <div class="card bg-primary shadow-sm h-100 border-0">
@@ -15,7 +15,7 @@
                     </div>
                 </div>
             </div>
-             <div class="col-md-4">
+            <div class="col-md-4">
                 <div class="card bg-info shadow-sm h-100 border-0">
                     <div class="card-body text-center py-4">
                         <div class="mb-2 opacity-75"><i class="fas fa-check-circle fa-2x text-white"></i></div>
@@ -24,7 +24,7 @@
                     </div>
                 </div>
             </div>
-             <div class="col-md-4">
+            <div class="col-md-4">
                 <div class="card bg-secondary shadow-sm h-100 border-0">
                     <div class="card-body text-center py-4">
                         <div class="mb-2 opacity-75"><i class="fas fa-bookmark fa-2x text-white"></i></div>
@@ -40,7 +40,7 @@
                 <h5 class="mb-0 fw-bold text-dark"><i class="fas fa-history me-2 text-primary"></i>Lamaran Terbaru</h5>
             </div>
             <div class="card-body p-0">
-                 <div class="table-responsive">
+                <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0">
                         <thead class="bg-light">
                             <tr>
@@ -111,24 +111,48 @@
                     <small class="d-block text-muted"><i class="fas fa-map-marker-alt me-1"></i> {{ $job->location->name }} • <i class="fas fa-briefcase me-1"></i> {{ ucfirst(str_replace('_', ' ', $job->job_type)) }}</small>
                 </a>
                 @empty
-                    <div class="p-4 text-center text-muted">Tidak ada lowongan unggulan saat ini.</div>
+                <div class="p-4 text-center text-muted">Tidak ada lowongan unggulan saat ini.</div>
                 @endforelse
             </div>
-             <div class="card-footer bg-white text-center py-3">
+            <div class="card-footer bg-white text-center py-3">
                 <a href="{{ route('seeker.jobs.index') }}" class="fw-bold text-decoration-none small">Lihat Semua Lowongan <i class="fas fa-arrow-right ms-1"></i></a>
             </div>
         </div>
-        
+
         <div class="card bg-light border-0 shadow-sm">
             <div class="card-body p-4">
-                <h6 class="card-title fw-bold text-dark mb-3"><i class="fas fa-user-edit me-2 text-primary"></i>Lengkapi Profil Anda</h6>
+                <h6 class="card-title fw-bold text-dark mb-3">
+                    <i class="fas fa-user-edit me-2 text-primary"></i>Lengkapi Profil Anda
+                </h6>
+
                 <div class="progress mb-3" style="height: 8px; border-radius: 10px; background-color: rgba(0,0,0,0.05);">
-                    <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 70%;" aria-valuenow="70" aria-valuemin="0" aria-valuemax="100"></div>
+                    <div class="progress-bar progress-bar-striped progress-bar-animated"
+                        role="progressbar"
+                        style="width: {{ $profilePercentage }}%;"
+                        aria-valuenow="{{ $profilePercentage }}"
+                        aria-valuemin="0"
+                        aria-valuemax="100">
+                    </div>
                 </div>
-                 <p class="card-text small text-muted mb-4">Menambahkan lebih banyak detail meningkatkan peluang Anda untuk direkrut oleh perusahaan papan atas.</p>
+
+                <p class="card-text small text-muted mb-4">
+                    Profil Anda sudah {{ $profilePercentage }}% lengkap.
+                    {{ $profilePercentage < 100 ? 'Lengkapi detail pengalaman Anda untuk meningkatkan peluang terpilih dalam proses seleksi.' : 'Profil Anda sudah sangat luar biasa!' }}
+                </p>
                 <a href="{{ route('seeker.profile.edit') }}" class="btn btn-primary w-100 fw-bold py-2">Update Profil</a>
             </div>
         </div>
     </div>
 </div>
+<style>
+    .list-group-item-action:hover {
+        background-color: #f8f9fa;
+        border-left: 4px solid #0d6efd; /* Memberikan aksen warna saat di-hover */
+        transition: all 0.2s ease;
+    }
+    .smaller {
+        font-size: 0.75rem;
+    }
+</style>
 @endsection
+
