@@ -6,17 +6,23 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Run the migrations.
+     */
     public function up(): void
     {
-        Schema::table('companies', function (Blueprint $table) {
-            $table->string('company_profile_url')->nullable()->after('instagram');
+        Schema::table('jobs', function (Blueprint $table) {
+            //
         });
     }
 
+    /**
+     * Reverse the migrations.
+     */
     public function down(): void
     {
-        Schema::table('companies', function (Blueprint $table) {
-            $table->dropColumn('company_profile_url');
+        Schema::table('jobs', function (Blueprint $table) {
+            //
         });
     }
 };

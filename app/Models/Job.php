@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
 class Job extends Model
 {
@@ -16,12 +17,16 @@ class Job extends Model
         'location_id',
         'title',
         'slug',
+        'department',      // Penambahan baru
+        'work_setting',    // Penambahan baru (on_site, hybrid, remote)
         'description',
         'requirements',
         'responsibilities',
         'salary_min',
         'salary_max',
         'salary_type',
+        'salary_currency',
+        'is_salary_visible', // Penambahan baru
         'job_type',
         'experience_level',
         'education_level',
@@ -34,14 +39,18 @@ class Job extends Model
     ];
 
     protected $casts = [
-        'salary_min' => 'decimal:2',
-        'salary_max' => 'decimal:2',
-        'deadline' => 'date',
-        'is_featured' => 'boolean',
-        'is_remote' => 'boolean',
+        'salary_min'        => 'decimal:2',
+        'salary_max'        => 'decimal:2',
+        'deadline'          => 'date',
+        'is_featured'       => 'boolean',
+        'is_remote'         => 'boolean',
+        'is_salary_visible' => 'boolean', // Casting untuk keamanan data boolean
+        'vacancy'           => 'integer',
+        'views'             => 'integer',
     ];
 
-    // Relationships
+    // --- Relationships ---
+
     public function company()
     {
         return $this->belongsTo(Company::class);
@@ -62,7 +71,8 @@ class Job extends Model
         return $this->hasMany(JobApplication::class);
     }
 
-    // Scope methods
+    // --- Scope Methods (Query Helpers) ---
+
     public function scopePublished($query)
     {
         return $query->where('status', 'published');
@@ -70,7 +80,7 @@ class Job extends Model
 
     public function scopeActive($query)
     {
-        return $query->where('status', 'published')
+        return $query->published()
             ->where(function ($q) {
                 $q->whereNull('deadline')
                   ->orWhere('deadline', '>=', now());
@@ -79,57 +89,69 @@ class Job extends Model
 
     public function scopeFeatured($query)
     {
-        return $query->where('is_featured', true)
-            ->published();
+        return $query->where('is_featured', true)->published();
     }
 
-    public function scopeRemote($query)
+    // --- Accessors & Helpers ---
+
+    /**
+     * Format tampilan gaji yang lebih dinamis dan mendukung privasi (is_salary_visible).
+     */
+    public function getSalaryFormattedAttribute(): string
     {
-        return $query->where('is_remote', true);
+        // Jika perusahaan memilih untuk menyembunyikan gaji
+        if (!$this->is_salary_visible) {
+            return 'Gaji Kompetitif';
+        }
+
+        if (!$this->salary_min && !$this->salary_max) {
+            return 'Gaji Kompetitif / Negosiasi';
+        }
+
+        $currency = $this->salary_currency ?? 'IDR';
+        $formatter = new \NumberFormatter('id_ID', \NumberFormatter::CURRENCY);
+        
+        $typeMap = [
+            'monthly' => 'per bulan',
+            'hourly'  => 'per jam',
+            'yearly'  => 'per tahun',
+            'project' => 'per proyek',
+        ];
+
+        $displayType = $typeMap[strtolower($this->salary_type)] ?? $this->salary_type;
+
+        if ($this->salary_min && $this->salary_max) {
+            return $formatter->formatCurrency($this->salary_min, $currency) . ' - ' . 
+                   $formatter->formatCurrency($this->salary_max, $currency) . ' / ' . $displayType;
+        }
+
+        if ($this->salary_min) {
+            return 'Mulai ' . $formatter->formatCurrency($this->salary_min, $currency) . ' / ' . $displayType;
+        }
+
+        return 'Hingga ' . $formatter->formatCurrency($this->salary_max, $currency) . ' / ' . $displayType;
     }
 
-    // Helper methods
+    /**
+     * Helper untuk mendapatkan label badge status tempat kerja.
+     */
+    public function getWorkSettingLabelAttribute(): string
+    {
+        return [
+            'on_site' => 'On-site (Di Kantor)',
+            'hybrid'  => 'Hybrid',
+            'remote'  => 'Remote (Jarak Jauh)',
+        ][$this->work_setting] ?? 'On-site';
+    }
+
     public function isActive(): bool
     {
         return $this->status === 'published' && 
-               (!$this->deadline || $this->deadline >= now());
+               (!$this->deadline || $this->deadline->isFuture() || $this->deadline->isToday());
     }
 
     public function isExpired(): bool
     {
-        return $this->deadline && $this->deadline < now();
-    }
-
-    public function getSalaryFormattedAttribute(): string
-    {
-        if (!$this->salary_min && !$this->salary_max) {
-            return 'Negosiasi';
-        }
-
-        $currency = 'IDR';
-        $formatter = new \NumberFormatter('id_ID', \NumberFormatter::CURRENCY);
-        
-        $salaryType = $this->salary_type;
-        $typeMap = [
-            'monthly' => 'per bulan',
-            'hourly' => 'per jam',
-            'yearly' => 'per tahun',
-            'daily' => 'per hari',
-            'weekly' => 'per minggu',
-        ];
-
-        $displayType = $typeMap[strtolower($salaryType)] ?? $salaryType;
-
-        if ($this->salary_min && $this->salary_max) {
-            return $formatter->formatCurrency($this->salary_min, $currency) . ' - ' . 
-                   $formatter->formatCurrency($this->salary_max, $currency) . ' ' . 
-                    $displayType;
-        }
-
-        if ($this->salary_min) {
-            return 'Min. ' . $formatter->formatCurrency($this->salary_min, $currency) . ' ' . $displayType;
-        }
-
-        return 'Maks. ' . $formatter->formatCurrency($this->salary_max, $currency) . ' ' . $displayType;
+        return $this->deadline && $this->deadline->isPast() && !$this->deadline->isToday();
     }
 }
