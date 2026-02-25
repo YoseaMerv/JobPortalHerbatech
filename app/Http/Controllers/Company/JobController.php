@@ -4,152 +4,190 @@ namespace App\Http\Controllers\Company;
 
 use App\Http\Controllers\Controller;
 use App\Models\Job;
+use App\Models\Company;
 use App\Models\JobCategory;
 use App\Models\JobLocation;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 
 class JobController extends Controller
 {
+    /**
+     * Helper untuk mengambil data perusahaan tunggal (HerbaTech).
+     */
+    private function getCompany()
+    {
+        return Company::first() ?? abort(404, 'Data perusahaan HerbaTech belum dikonfigurasi di database.');
+    }
+
+    /**
+     * Menampilkan daftar semua lowongan pekerjaan.
+     */
     public function index()
     {
-        $jobs = Auth::user()->company->jobs()->latest()->paginate(10);
+        // Menggunakan withCount agar data pelamar muncul di list
+        $jobs = Job::withCount('applications')->latest()->paginate(10);
         return view('company.jobs.index', compact('jobs'));
     }
 
+    /**
+     * Menampilkan form untuk membuat lowongan baru.
+     */
     public function create()
     {
-        $categories = JobCategory::active()->get();
-        $locations = JobLocation::active()->get();
+        $categories = JobCategory::where('is_active', true)->get();
+        $locations = JobLocation::where('is_active', true)->get();
         
         return view('company.jobs.create', compact('categories', 'locations'));
     }
 
+    /**
+     * Menyimpan lowongan baru ke database.
+     */
     public function store(Request $request)
     {
         $request->validate([
             'title' => 'required|string|max:255',
+            'department' => 'nullable|string|max:100',
             'category_id' => 'required|exists:job_categories,id',
             'location_id' => 'required|exists:job_locations,id',
+            'work_setting' => 'required|in:on_site,hybrid,remote',
+            'job_type' => 'required|in:full_time,part_time,contract,freelance,internship',
             'description' => 'required|string',
-            'requirements' => 'nullable|string',
-            'responsibilities' => 'nullable|string',
+            'requirements' => 'required|string',
+            'salary_currency' => 'required|string|max:3',
             'salary_min' => 'nullable|numeric|min:0',
             'salary_max' => 'nullable|numeric|min:0|gte:salary_min',
-            'salary_type' => 'required|in:monthly,yearly,hourly,project',
-            'job_type' => 'required|in:full_time,part_time,contract,freelance,internship',
-            'experience_level' => 'required|string|max:255',
-            'education_level' => 'nullable|in:sd,smp,sma,d3,s1,s2,s3',
-            'deadline' => 'nullable|date|after:today',
+            'salary_type' => 'required|in:hourly,monthly,yearly,project',
+            'experience_level' => 'required|string',
+            'deadline' => 'required|date|after:today',
             'vacancy' => 'required|integer|min:1',
-            'is_remote' => 'boolean',
+            'is_salary_visible' => 'nullable|boolean',
         ]);
 
-        $company = Auth::user()->company;
+        $company = $this->getCompany();
 
-        $job = $company->jobs()->create([
+        $company->jobs()->create([
             'title' => $request->title,
             'slug' => Str::slug($request->title) . '-' . time(),
+            'department' => $request->department,
             'category_id' => $request->category_id,
             'location_id' => $request->location_id,
+            'work_setting' => $request->work_setting,
+            'job_type' => $request->job_type,
             'description' => $request->description,
             'requirements' => $request->requirements,
-            'responsibilities' => $request->responsibilities,
+            'salary_currency' => $request->salary_currency,
             'salary_min' => $request->salary_min,
             'salary_max' => $request->salary_max,
             'salary_type' => $request->salary_type,
-            'job_type' => $request->job_type,
+            'is_salary_visible' => $request->has('is_salary_visible'), // Logika checkbox
             'experience_level' => $request->experience_level,
-            'education_level' => $request->education_level,
             'deadline' => $request->deadline,
             'vacancy' => $request->vacancy,
-            'status' => 'draft',
-            'is_remote' => $request->has('is_remote'),
+            'status' => 'published', 
         ]);
 
         return redirect()->route('company.jobs.index')
-            ->with('success', 'Job created successfully. It will be reviewed by admin.');
+            ->with('success', 'Lowongan pekerjaan berhasil diterbitkan.');
     }
 
+    /**
+     * Menampilkan detail lowongan.
+     */
+    public function show(Job $job)
+    {
+        return view('company.jobs.show', compact('job'));
+    }
+
+    /**
+     * Menampilkan form edit lowongan.
+     */
     public function edit(Job $job)
     {
-        $this->authorize('update', $job);
-        
-        $categories = JobCategory::active()->get();
-        $locations = JobLocation::active()->get();
+        $categories = JobCategory::where('is_active', true)->get();
+        $locations = JobLocation::where('is_active', true)->get();
         
         return view('company.jobs.edit', compact('job', 'categories', 'locations'));
     }
 
+    /**
+     * Memperbarui data lowongan.
+     */
     public function update(Request $request, Job $job)
     {
-        $this->authorize('update', $job);
-        
         $request->validate([
             'title' => 'required|string|max:255',
+            'department' => 'nullable|string|max:100',
             'category_id' => 'required|exists:job_categories,id',
             'location_id' => 'required|exists:job_locations,id',
+            'work_setting' => 'required|in:on_site,hybrid,remote',
+            'job_type' => 'required|in:full_time,part_time,contract,freelance,internship',
             'description' => 'required|string',
-            'requirements' => 'nullable|string',
-            'responsibilities' => 'nullable|string',
+            'requirements' => 'required|string',
             'salary_min' => 'nullable|numeric|min:0',
             'salary_max' => 'nullable|numeric|min:0|gte:salary_min',
-            'salary_type' => 'required|in:monthly,yearly,hourly,project',
-            'job_type' => 'required|in:full_time,part_time,contract,freelance,internship',
-            'experience_level' => 'required|string|max:255',
-            'education_level' => 'nullable|in:sd,smp,sma,d3,s1,s2,s3',
-            'deadline' => 'nullable|date|after:today',
+            'salary_type' => 'required|in:hourly,monthly,yearly,project',
+            'experience_level' => 'required|string',
+            'deadline' => 'required|date', 
             'vacancy' => 'required|integer|min:1',
-            'is_remote' => 'boolean',
             'status' => 'required|in:draft,published,closed,expired',
+            'is_salary_visible' => 'nullable|boolean',
+        ],[
+            'department.required' => 'Nama Departemen tidak boleh dikosongkan.',
+            'vacancy.required' => 'Jumlah lowongan wajib diisi.',
+            'vacancy.min' => 'Jumlah lowongan harus minimal 1.',
         ]);
 
         $job->update([
             'title' => $request->title,
+            // Opsional: Update slug jika judul berubah
+            'slug' => $job->title !== $request->title ? Str::slug($request->title) . '-' . time() : $job->slug,
+            'department' => $request->department,
             'category_id' => $request->category_id,
             'location_id' => $request->location_id,
+            'work_setting' => $request->work_setting,
+            'job_type' => $request->job_type,
             'description' => $request->description,
             'requirements' => $request->requirements,
-            'responsibilities' => $request->responsibilities,
             'salary_min' => $request->salary_min,
             'salary_max' => $request->salary_max,
             'salary_type' => $request->salary_type,
-            'job_type' => $request->job_type,
+            'is_salary_visible' => $request->has('is_salary_visible'), 
             'experience_level' => $request->experience_level,
-            'education_level' => $request->education_level,
-            'deadline' => $request->deadline,
             'vacancy' => $request->vacancy,
             'status' => $request->status,
-            'is_remote' => $request->has('is_remote'),
         ]);
 
         return redirect()->route('company.jobs.index')
-            ->with('success', 'Job updated successfully.');
+            ->with('success', 'Lowongan pekerjaan berhasil diperbarui.');
     }
 
+    /**
+     * Menghapus lowongan pekerjaan (Soft Delete).
+     */
     public function destroy(Job $job)
     {
-        $this->authorize('delete', $job);
-        
         $job->delete();
         return redirect()->route('company.jobs.index')
-            ->with('success', 'Job deleted successfully.');
+            ->with('success', 'Lowongan pekerjaan berhasil dihapus.');
     }
-
-    public function publish(Job $job)
-    {
-        $this->authorize('update', $job);
-        
-        $job->update(['status' => 'published']);
-        return back()->with('success', 'Job published successfully.');
-    }
-
+    
+    /**
+     * Menutup lowongan secara cepat dari index.
+     */
     public function close(Job $job)
     {
-        $this->authorize('update', $job);
-        
         $job->update(['status' => 'closed']);
-        return back()->with('success', 'Job closed successfully.');
+        return back()->with('success', ' Lowongan telah ditutup.');
+    }
+
+    /**
+     * Menerbitkan lowongan secara cepat dari index.
+     */
+    public function publish(Job $job)
+    {
+        $job->update(['status' => 'published']);
+        return back()->with('success', 'Lowongan berhasil diterbitkan.');
     }
 }

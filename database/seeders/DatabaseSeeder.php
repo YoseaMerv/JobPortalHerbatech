@@ -67,6 +67,8 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
+        
+
         if (!$seekerUser->seekerProfile()->exists()) {
             $seekerUser->seekerProfile()->create([
                 'phone' => '+628123456789',
