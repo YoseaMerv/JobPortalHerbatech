@@ -108,6 +108,9 @@ Route::prefix('seeker')->name('seeker.')->middleware(['auth', 'verified', 'role:
          * agar sinkron dengan Controller submitTest(Request $request, $testId)
          */
         Route::post('/{testId}/submit', [KraepelinController::class, 'submitTest'])->name('submit');
+        // Ubah {test} menjadi {testId}
+        Route::get('/{testId}/submit', [KraepelinController::class, 'submitTest'])->name('submit');
+        
     });
 
     Route::get('/profile', [\App\Http\Controllers\Seeker\ProfileController::class, 'edit'])->name('profile.edit');

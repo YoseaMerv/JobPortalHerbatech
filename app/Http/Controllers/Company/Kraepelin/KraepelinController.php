@@ -67,29 +67,21 @@ class KraepelinController extends Controller
     /**
      * Menyimpan hasil jawaban dan menghitung skor.
      */
-    /**
-     * Menyimpan hasil jawaban dan menghitung skor secara otomatis.
-     */
     public function submitTest(Request $request, $testId)
     {
         try {
             $test = KraepelinTest::findOrFail($testId);
-            $answers = $request->input('answers', []); // Data dari JS: {"0-0":"5", "0-1":"3"}
-            $questions = $test->questions; // Ambil soal asli dari DB
+            $answers = $request->input('answers', []);
+            $questions = $test->questions;
 
             $totalCorrect = 0;
             $totalAnswered = count($answers);
 
-            // LOGIKA PERHITUNGAN SKOR OTOMATIS
+            // Logika hitung skor otomatis
             foreach ($answers as $key => $userAnswer) {
-                // Pecah key "kolom-baris" (contoh: "0-1")
                 [$col, $row] = explode('-', $key);
-
-                // Ambil dua angka yang dijumlahkan berdasarkan posisi soal
-                $num1 = $questions[$col][$row];     // Angka pertama
-                $num2 = $questions[$col][$row + 1]; // Angka kedua (di atasnya)
-
-                // Digit terakhir dari penjumlahan (Modulus 10)
+                $num1 = $questions[$col][$row];
+                $num2 = $questions[$col][$row + 1];
                 $correctSum = ($num1 + $num2) % 10;
 
                 if ((int)$userAnswer === $correctSum) {
@@ -97,33 +89,26 @@ class KraepelinController extends Controller
                 }
             }
 
-            $totalWrong = $totalAnswered - $totalCorrect;
-
-            // Update Database dengan semua kolom yang dibutuhkan
+            // Simpan semua kolom untuk menghindari Error 500 Database
             $test->update([
-                'answers'         => $answers, // Cast array otomatis handle JSON
+                'answers'         => $answers,
                 'total_answered'  => $totalAnswered,
                 'total_correct'   => $totalCorrect,
-                'total_wrong'     => $totalWrong,
-                'stability_score' => 0, // Placeholder jika belum ada rumus stabilitas
+                'total_wrong'     => $totalAnswered - $totalCorrect,
+                'stability_score' => 0, // Placeholder nilai default
                 'completed_at'    => now(),
             ]);
 
-            // Update status lamaran kerja menggunakan konstanta Model
-            $test->jobApplication->update([
-                'status' => JobApplication::STATUS_TEST_COMPLETED
-            ]);
+            $test->jobApplication->update(['status' => 'test_completed']);
 
             return response()->json([
-                'status' => 'success',
-                'message' => 'Tes berhasil disimpan',
+                'status'   => 'success',
                 'redirect' => route('seeker.dashboard')
             ]);
         } catch (\Exception $e) {
-            // Memberikan detail error jika gagal agar mudah di-debug di Console Browser
             return response()->json([
-                'status' => 'error',
-                'message' => 'Gagal menyimpan hasil: ' . $e->getMessage()
+                'status'  => 'error',
+                'message' => $e->getMessage()
             ], 500);
         }
     }

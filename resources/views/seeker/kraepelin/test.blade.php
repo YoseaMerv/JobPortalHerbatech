@@ -149,33 +149,37 @@
         }
     }
 
-    async function finishTest() {
+async function finishTest() {
     isSubmitting = true;
-    
-    // Beri tanda visual loading
-    const timerDisplay = document.getElementById('column-timer');
-    timerDisplay.innerText = "Saving...";
     document.body.style.opacity = '0.5';
 
     try {
-        // Pastikan URL Route sudah benar
         const response = await axios.post(submitUrl, {
             answers: allAnswers,
             total_answered: Object.keys(allAnswers).length
+        }, {
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Accept': 'application/json'
+            }
         });
         
         if (response.data.status === 'success') {
             window.location.href = response.data.redirect;
-        } else {
-            throw new Error(response.data.message);
         }
     } catch (error) {
-        console.error("Submission Error:", error);
-        alert('Gagal mengirim data. Silakan cek koneksi atau hubungi admin.');
+        console.error("Submission Error:", error.response?.data);
+        alert('Gagal mengirim data. Silakan cek tab Network di F12 untuk detail.');
         isSubmitting = false;
         document.body.style.opacity = '1';
-        timerDisplay.innerText = "Error";
     }
+}
+
+function resetUI() {
+    isSubmitting = false;
+    document.body.style.opacity = '1';
+    document.body.style.pointerEvents = 'auto';
+    document.getElementById('column-timer').innerText = "Error";
 }
 
     // Jalankan pertama kali
