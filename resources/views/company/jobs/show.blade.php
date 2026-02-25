@@ -126,9 +126,8 @@
             <div class="stat-row">
                 <div class="stat-card-mini text-center">
                     <div class="stat-label-display">Kandidat Pelamar</div>
-                    <a href="{{ route('company.applications.index', ['job_id' => $job->id]) }}" class="stat-value-display text-decoration-none" style="color: var(--brand-color);">
-                        {{ $job->applications_count }}
-                    </a>
+                    <a href="{{ route('company.applications.index', ['job_id' => $job->id]) }}" class="stat-value-display text-decoration-none" style="color: var(--dark-color);">
+                        {{ $job->applications_count ?? 0 }} </a>
                 </div>
                 <div class="stat-card-mini text-center">
                     <div class="stat-label-display">Total Dilihat</div>

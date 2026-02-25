@@ -24,21 +24,38 @@ class ApplicationController extends Controller
     public function show(JobApplication $application)
     {
         $this->authorizeAccess($application);
-        $application->load(['job', 'user.seekerProfile.experiences', 'user.seekerProfile.educations', 'user.seekerProfile.skills']);
-        return view('company.applications.show', compact('application'));
+        $application->load([
+        'job', 
+        'kraepelinTest', 
+        'user.seekerProfile.experiences', 
+        'user.seekerProfile.educations', 
+        'user.seekerProfile.skills'
+    ]);
+    
+    return view('company.applications.show', compact('application'));
     }
 
     public function updateStatus(Request $request, JobApplication $application)
     {
         $this->authorizeAccess($application);
-        
+
         $request->validate([
-            'status' => 'required|in:pending,shortlisted,rejected,accepted',
+            'status' => 'required|in:pending,reviewed,shortlisted,test_invited,test_in_progress,test_completed,interview,accepted,rejected',
         ]);
 
-        $application->update(['status' => $request->status]);
+        $oldStatus = $application->status;
+        $newStatus = $request->status;
 
-        return back()->with('success', 'Application status updated.');
+        $application->update([
+            'status' => $newStatus
+        ]);
+
+        if ($newStatus === 'test_invited' && $oldStatus !== 'test_invited') {
+            // Pengiriman email otomatis berisi link tes
+            // Mail::to($application->user->email)->send(new KraepelinTestInvitation($application));
+        }
+
+        return back()->with('success', 'Status lamaran berhasil diperbarui menjadi: ' . $application->status_label);
     }
 
     public function downloadCv(JobApplication $application)
