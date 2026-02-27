@@ -59,7 +59,6 @@
         border-color: #4338ca; 
         box-shadow: 0 0 0 3px rgba(67, 56, 202, 0.15); 
     }
-    /* Sembunyikan spin button arrow pada input number */
     input::-webkit-outer-spin-button, 
     input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
     input[type=number] { -moz-appearance: textfield; }
@@ -75,7 +74,6 @@
 </style>
 
 @php
-    // Sinkronisasi data questions
     $questionsData = $test->questions;
     $questionsArray = is_string($questionsData) ? json_decode($questionsData, true) : $questionsData;
 @endphp
@@ -83,17 +81,17 @@
 <div class="container-fluid p-0">
     <div class="timer-header d-flex justify-content-between align-items-center shadow-sm">
         <div>
-            <h5 class="mb-0 fw-bold text-dark">TES KRAEPELIN - HERBATECH</h5>
+            <h5 class="mb-0 fw-bold text-dark text-uppercase">Tes Kraepelin</h5>
             <p class="text-muted small mb-0">Jumlahkan dua angka dari bawah ke atas. Ketik digit terakhir saja.</p>
         </div>
         <div class="d-flex align-items-center gap-5">
             <div class="text-center border-end pe-5">
-                <div class="text-muted small fw-bold uppercase">Kolom</div>
+                <div class="text-muted small fw-bold text-uppercase">Kolom</div>
                 <div id="progress-text" class="h4 fw-bold mb-0 text-dark">1 / {{ count($questionsArray) }}</div>
             </div>
             <div class="text-end" style="min-width: 140px;">
-                <div class="text-muted small fw-bold uppercase">Sisa Waktu Kolom</div>
-                <div id="column-timer" class="display-6 fw-bold text-primary mb-0">15s</div>
+                <div class="text-muted small fw-bold text-uppercase">Sisa Waktu Kolom</div>
+                <div id="column-timer" class="display-6 fw-bold text-primary mb-0">45s</div>
             </div>
         </div>
     </div>
@@ -110,7 +108,6 @@
                     <div class="number-box">{{ $num }}</div>
                     @if(!$loop->last)
                         @php 
-                            // Kraepelin input berada di sela-sela dua angka
                             $originalIndex = ($totalItems - 1) - $visualRowIndex; 
                         @endphp
                         <input type="number" class="input-box" maxlength="1"
@@ -126,11 +123,12 @@
     </div>
 </div>
 
+{{-- Modal Loading --}}
 <div class="modal fade" id="loadingModal" data-bs-backdrop="static" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered border-0">
         <div class="modal-content bg-transparent border-0 text-center">
             <div class="spinner-border text-white mb-3" style="width: 3rem; height: 3rem;" role="status"></div>
-            <h5 class="text-white fw-bold">Menghitung Hasil Tes Anda...</h5>
+            <h5 class="text-white fw-bold">Menyimpan Hasil Tes Anda...</h5>
         </div>
     </div>
 </div>
@@ -139,20 +137,17 @@
 <script>
     const totalColumns = {{ count($questionsArray) }};
     const testId = "{{ $test->id }}";
-    // Sesuaikan rute dengan web.php Anda
     const submitUrl = "{{ route('seeker.kraepelin.submit', ':testId') }}".replace(':testId', testId);
     
     let currentCol = 0;
-    let columnTimeLimit = 1 ; // 15 detik per kolom sesuai standar Kraepelin
+    let columnTimeLimit = 45; // Waktu diubah menjadi 45 detik
     let timerInterval;
     let isSubmitting = false;
     let allAnswers = {};
 
-    // CSRF Token Setup
     const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
     axios.defaults.headers.common['X-CSRF-TOKEN'] = csrfToken;
 
-    // Cegah user keluar/refresh tidak sengaja
     window.addEventListener('beforeunload', function (e) {
         if (!isSubmitting) {
             e.preventDefault();
@@ -170,7 +165,6 @@
         timerDisplay.innerText = timeLeft + 's';
         progressDisplay.innerText = `${currentCol + 1} / ${totalColumns}`;
         
-        // Atur UI Kolom
         document.querySelectorAll('.test-column').forEach(el => el.classList.remove('active'));
         
         const activeEl = document.getElementById(`col-${currentCol}`);
@@ -179,8 +173,6 @@
         activeEl.classList.add('active');
         activeEl.querySelectorAll('.input-box').forEach(input => input.disabled = false);
         
-        // Auto fokus ke input pertama di kolom tersebut (paling bawah)
-        // Note: index terkecil (0 atau 1 tergantung logic) adalah yang terbawah setelah array_reverse
         const inputsInCol = activeEl.querySelectorAll('.input-box');
         if(inputsInCol.length > 0) inputsInCol[inputsInCol.length - 1].focus();
         
@@ -227,7 +219,6 @@
         if (isSubmitting) return;
         isSubmitting = true;
 
-        // Tampilkan loading overlay
         const loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'));
         loadingModal.show();
         document.body.style.pointerEvents = 'none';
@@ -243,56 +234,47 @@
             }
         } catch (error) {
             console.error("Submission Error:", error);
-            alert('Terjadi kesalahan koneksi. Klik OK untuk mencoba kirim ulang.');
+            alert('Terjadi kesalahan koneksi. Mencoba kirim ulang...');
             isSubmitting = false;
             document.body.style.pointerEvents = 'auto';
             loadingModal.hide();
-            finishTest(); // Rekursif mencoba kirim ulang jika gagal
+            finishTest();
         }
     }
 
-    // Jalankan tes setelah halaman siap
     document.addEventListener('DOMContentLoaded', () => {
         startColumnTimer();
     });
 
-// GANTI bagian listener 'keyup' Anda dengan kode 'input' di bawah ini:
+    document.addEventListener('input', function(e) {
+        if (e.target.classList.contains('input-box')) {
+            if (e.target.value.length >= 1) {
+                if (e.target.value.length > 1) {
+                    e.target.value = e.target.value.slice(-1);
+                }
 
-document.addEventListener('input', function(e) {
-    if (e.target.classList.contains('input-box')) {
-        // Pastikan hanya 1 karakter yang masuk (digit terakhir)
-        if (e.target.value.length >= 1) {
-            // Jika user mengetik lebih dari 1 angka secara cepat, ambil yang terakhir
-            if (e.target.value.length > 1) {
-                e.target.value = e.target.value.slice(-1);
+                const col = e.target.dataset.col;
+                const currentRow = parseInt(e.target.dataset.row);
+                
+                // Navigasi ke ATAS (Row + 1 karena urutan reverse visual)
+                const nextInput = document.getElementById(`input-${col}-${currentRow + 1}`);
+                if (nextInput) {
+                    nextInput.focus();
+                }
             }
+        }
+    });
 
+    document.addEventListener('keydown', function(e) {
+        if (e.target.classList.contains('input-box')) {
             const col = e.target.dataset.col;
             const currentRow = parseInt(e.target.dataset.row);
-            
-            // Kraepelin menjumlahkan ke ATAS. 
-            // Index baris berikutnya adalah currentRow + 1
-            const nextInput = document.getElementById(`input-${col}-${currentRow + 1}`);
-            
-            if (nextInput) {
-                nextInput.focus();
+
+            if (e.key === "Backspace" && e.target.value === "") {
+                const prevInput = document.getElementById(`input-${col}-${currentRow - 1}`);
+                if (prevInput) prevInput.focus();
             }
         }
-    }
-});
-
-// Tetap pertahankan listener 'keydown' untuk navigasi manual (opsional)
-document.addEventListener('keydown', function(e) {
-    if (e.target.classList.contains('input-box')) {
-        const col = e.target.dataset.col;
-        const currentRow = parseInt(e.target.dataset.row);
-
-        if (e.key === "Backspace" && e.target.value === "") {
-            // Balik ke bawah jika hapus
-            const prevInput = document.getElementById(`input-${col}-${currentRow - 1}`);
-            if (prevInput) prevInput.focus();
-        }
-    }
-});
+    });
 </script>
 @endsection
