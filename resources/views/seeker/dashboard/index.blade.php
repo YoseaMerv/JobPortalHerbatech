@@ -124,20 +124,31 @@
     </div>
 
     <div class="col-md-4">
+        {{-- Ganti bagian Skor Profil di dashboard.blade.php Anda --}}
         <div class="card border-0 shadow-sm mb-4 overflow-hidden" style="border-radius: 16px;">
             <div class="card-body p-4">
                 <div class="d-flex align-items-center mb-3">
                     <div class="flex-grow-1">
                         <h6 class="fw-bold text-dark mb-1">Skor Profil Anda</h6>
-                        <p class="small text-muted mb-0">Lengkapi untuk dilirik HR</p>
+                        <p class="small text-muted mb-0">
+                            {{ $data['profileScore'] < 100 ? 'Lengkapi untuk dilirik HR' : 'Profil Anda sudah luar biasa!' }}
+                        </p>
                     </div>
-                    <div class="fw-bold h4 text-primary mb-0">70%</div>
+                    {{-- Tampilkan skor dinamis --}}
+                    <div class="fw-bold h4 text-primary mb-0">{{ $data['profileScore'] }}%</div>
                 </div>
                 <div class="progress mb-4" style="height: 8px; border-radius: 10px; background-color: #f1f5f9;">
-                    <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 70%;" aria-valuenow="70" aria-valuemin="0" aria-valuemax="100"></div>
+                    {{-- Lebar progress bar mengikuti skor --}}
+                    <div class="progress-bar progress-bar-striped progress-bar-animated bg-{{ $data['profileScore'] == 100 ? 'success' : 'primary' }}"
+                        role="progressbar"
+                        style="width: {{ $data['profileScore'] }}%;"
+                        aria-valuenow="{{ $data['profileScore'] }}"
+                        aria-valuemin="0"
+                        aria-valuemax="100"></div>
                 </div>
-                <a href="{{ route('seeker.profile.edit') }}" class="btn btn-outline-primary w-100 fw-bold py-2 rounded-pill shadow-sm">
-                    <i class="fas fa-user-edit me-2"></i> Update Profil Digital
+                <a href="{{ route('seeker.profile.edit') }}" class="btn {{ $data['profileScore'] < 100 ? 'btn-outline-primary' : 'btn-success' }} w-100 fw-bold py-2 rounded-pill shadow-sm">
+                    <i class="fas {{ $data['profileScore'] < 100 ? 'fa-user-edit' : 'fa-check-circle' }} me-2"></i>
+                    {{ $data['profileScore'] < 100 ? 'Update Profil Digital' : 'Profil Lengkap' }}
                 </a>
             </div>
         </div>
@@ -221,7 +232,7 @@
     tr:hover .badge {
         transform: scale(1.05);
     }
-    
+
     /* CSS UNTUK BANNER KRAEPELIN */
     .alert-indigo {
         background: linear-gradient(135deg, #6366f1 0%, #4338ca 100%);

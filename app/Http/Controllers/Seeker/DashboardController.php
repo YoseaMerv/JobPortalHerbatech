@@ -13,8 +13,18 @@ class DashboardController extends Controller
     public function index()
     {
         $user = Auth::user();
+        $profile = $user->seekerProfile;
 
-        // 1. Definisikan variabel $data (Penyebab Error Sebelumnya)
+        // 1. Logika perhitungan skor (Pastikan sinkron dengan halaman edit)
+        $profileScore = 0;
+        if ($user->avatar) $profileScore += 25;
+        if ($profile?->summary) $profileScore += 25;
+        if ($profile?->resume_path) $profileScore += 25;
+        if ($profile && ($profile->experiences->count() > 0 || $profile->educations->count() > 0)) {
+            $profileScore += 25;
+        }
+
+        // 2. Definisikan data dashboard
         $data = [
             'totalApplications' => $user->applications()->count(),
             'pendingApplications' => $user->applications()->where('status', 'pending')->count(),
@@ -28,27 +38,21 @@ class DashboardController extends Controller
                 ->take(5)
                 ->get(),
             'savedJobs' => $user->savedJobs()->count(),
+            'profileScore' => $profileScore, // Masukkan score ke sini
         ];
 
-        // 2. Ambil Lowongan Unggulan
-        $featuredJobs = Job::with(['company', 'location'])->published()->latest()->take(5)->get();
+        // 3. Ambil lowongan unggulan (Pastikan relasi company & location ada)
+        $featuredJobs = Job::with(['company', 'location'])
+            ->published()
+            ->where('is_featured', true)
+            ->latest()
+            ->take(3)
+            ->get();
 
-        // 3. Logika perhitungan profil (dengan pengecekan null)
-        $profile = $user->seekerProfile;
-        $points = 0;
-        $totalPoints = 5;
+        // 4. Perbaikan return view (Gunakan titik '.' untuk folder)
+        // Jika file Anda berada di resources/views/seeker/dashboard.blade.php gunakan 'seeker.dashboard'
+        // Jika file Anda berada di resources/views/seeker/dashboard/index.blade.php gunakan 'seeker.dashboard.index'
 
-        if ($profile) {
-            if ($profile->summary) $points++;
-            if ($profile->phone) $points++;
-            if ($profile->experiences()->exists()) $points++;
-            if ($profile->educations()->exists()) $points++;
-            if ($profile->resume_path) $points++;
-        }
-
-        $profilePercentage = ($points / $totalPoints) * 100;
-
-        // 4. Kirim semua variabel ke view
-        return view('seeker.dashboard.index', compact('data', 'featuredJobs', 'profilePercentage'));
+        return view('seeker.dashboard.index', compact('data', 'featuredJobs'));
     }
 }
