@@ -15,6 +15,16 @@ class DashboardController extends Controller
         $user = Auth::user();
         $profile = $user->seekerProfile;
 
+        $recentApplications = $user->applications()
+            ->with(['job.company'])
+            ->latest()
+            ->take(5)
+            ->get();
+
+        $testInvitation = $recentApplications
+            ->whereIn('status', ['test_invited', 'test_in_progress'])
+            ->first();
+
         // 1. Logika perhitungan skor (Pastikan sinkron dengan halaman edit)
         $profileScore = 0;
         if ($user->avatar) $profileScore += 25;
