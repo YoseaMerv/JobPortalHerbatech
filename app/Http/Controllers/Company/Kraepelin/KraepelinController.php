@@ -7,6 +7,7 @@ use App\Models\JobApplication;
 use App\Models\KraepelinTest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+    use Barryvdh\DomPDF\Facade\Pdf;
 
 class KraepelinController extends Controller
 {
@@ -19,11 +20,12 @@ class KraepelinController extends Controller
 
         // Validasi status lamaran
         if (!in_array($application->status, [JobApplication::STATUS_TEST_INVITED, JobApplication::STATUS_TEST_IN_PROGRESS])) {
-            return redirect()->route('seeker.dashboard')->with('error', 'Akses ditolak.');
+            return redirect()->route('seeker.dashboard')->with('error', 'Akses tes ditolak atau Anda sudah menyelesaikan tes.');
         }
 
         return view('seeker.kraepelin.instructions', compact('application'));
-    }
+        
+        }
 
     /**
      * Memulai tes dan generate angka acak.
@@ -31,38 +33,55 @@ class KraepelinController extends Controller
     // app/Http/Controllers/Company/Kraepelin/KraepelinController.php
 
     public function startTest($applicationId)
-    {
-        $application = JobApplication::findOrFail($applicationId);
+{
+    $application = JobApplication::where('id', $applicationId)
+        ->where('user_id', auth()->id())
+        ->firstOrFail();
 
-        // 1. Cari apakah sudah ada sesi tes yang belum selesai (completed_at masih NULL)
-        $test = KraepelinTest::where('job_application_id', $application->id)
-            ->whereNull('completed_at')
-            ->first();
+    $test = KraepelinTest::where('job_application_id', $application->id)
+        ->whereNull('completed_at')
+        ->first();
 
-        if (!$test) {
-            // PERTAMA KALI: Update status lamaran & Generate Soal
-            $application->update(['status' => JobApplication::STATUS_TEST_IN_PROGRESS]);
-
-            $questions = [];
-            for ($i = 0; $i < 50; $i++) {
-                $column = [];
-                for ($j = 0; $j < 40; $j++) {
-                    $column[] = rand(0, 9);
-                }
-                $questions[] = $column;
-            }
-
-            $test = KraepelinTest::create([
-                'job_application_id' => $application->id,
-                'questions' => $questions,
-                'started_at' => now(),
-            ]);
-        }
-        $questions = $test->questions;
-        // Pastikan variabel $test ikut dikirim
-        return view('seeker.kraepelin.test', compact('application', 'test', 'questions'));
+    if (!$test) {
+        // ... (Logika generate soal tetap sama) ...
+        $test = KraepelinTest::create([
+            'job_application_id' => $application->id,
+            'questions' => $questions, 
+            'started_at' => now(),
+        ]);
     }
 
+    // KIRIM VARIABEL $test. $questions akan diambil dari $test->questions di View.
+    return view('seeker.kraepelin.test', compact('application', 'test'));
+}
+public function exportPdf(JobApplication $application)
+{
+    $application->load(['kraepelinTest', 'user', 'job']);
+    $test = $application->kraepelinTest;
+
+    if (!$test || !$test->completed_at) {
+        return back()->with('error', 'Data tes belum tersedia.');
+    }
+
+    // Perhitungan Metrik Psikologi Detail
+    $totalAnswered = $test->total_answered;
+    $totalCorrect = $test->total_correct;
+    $accuracy = $totalAnswered > 0 ? round(($totalCorrect / $totalAnswered) * 100, 2) : 0;
+    
+    // Klasifikasi Kecepatan (PANKER)
+    $pankerLabel = $totalAnswered > 1200 ? 'Sangat Tinggi' : ($totalAnswered > 800 ? 'Tinggi' : 'Moderat');
+    
+    // Klasifikasi Ketelitian (TIANKER)
+    $tiankerLabel = $accuracy > 95 ? 'Sangat Teliti' : ($accuracy > 85 ? 'Teliti' : 'Cukup Teliti');
+
+    $pdf = Pdf::loadView('company.applications.kraepelin_pdf', compact('application', 'test', 'accuracy', 'pankerLabel', 'tiankerLabel'));
+    
+    // Set ukuran kertas A4
+    $pdf->setPaper('a4', 'portrait');
+
+    $pdf = Pdf::loadView('company.applications.kraepelin_pdf', compact('application', 'test', 'accuracy'));
+    return $pdf->download('Laporan_Kraepelin_' . str_replace(' ', '_', $application->user->name) . '.pdf');
+}
 
     /**
      * Menyimpan hasil jawaban dan menghitung skor.

@@ -4,34 +4,7 @@
 <div class="row">
     <div class="col-md-8">
         <h4 class="mb-4">Selamat datang kembali, {{ Auth::user()->name }}!</h4>
-
-        @php
-        $testInvitation = $data['recentApplications']
-        ->whereIn('status', ['test_invited', 'test_in_progress'])
-        ->first();
-        @endphp
-
-        @if($testInvitation)
-        <div class="alert alert-indigo border-0 shadow-sm mb-4 d-flex align-items-center p-4" style="border-radius: 16px;">
-            <div class="me-4 flex-shrink-0">
-                <i class="fas fa-file-signature fa-3x opacity-50 text-white"></i>
-            </div>
-            <div class="text-white">
-                <h5 class="fw-bold mb-1">
-                    {{ $testInvitation->status === 'test_in_progress' ? 'Lanjutkan Tes Kraepelin' : 'Undangan Tes Kraepelin!' }}
-                </h5>
-                <p class="mb-3 small opacity-90">
-                    {{ $testInvitation->status === 'test_in_progress' 
-                        ? 'Selesaikan tes Anda yang sedang berlangsung agar progres tersimpan.' 
-                        : 'Anda terpilih untuk tahap tes pada posisi ' . $testInvitation->job->title }}
-                </p>
-                <a href="{{ route('seeker.kraepelin.instructions', $testInvitation->id) }}" class="btn btn-light btn-sm fw-bold px-4 rounded-pill shadow-sm text-indigo">
-                    <i class="fas fa-play me-2"></i> {{ $testInvitation->status === 'test_in_progress' ? 'LANJUTKAN SEKARANG' : 'MULAI TES' }}
-                </a>
-            </div>
-        </div>
-        @endif
-
+        
         <div class="row mb-4">
             <div class="col-md-4">
                 <div class="card bg-primary shadow-sm h-100 border-0 overflow-hidden" style="border-radius: 16px;">
@@ -42,19 +15,19 @@
                     </div>
                 </div>
             </div>
-            <div class="col-md-4">
-                <div class="card bg-info shadow-sm h-100 border-0 overflow-hidden" style="border-radius: 16px;">
-                    <div class="card-body text-center py-4 position-relative">
-                        <div class="mb-2 opacity-25 position-absolute end-0 top-0 p-3"><i class="fas fa-check-circle fa-3x text-white"></i></div>
+             <div class="col-md-4">
+                <div class="card bg-info shadow-sm h-100 border-0">
+                    <div class="card-body text-center py-4">
+                        <div class="mb-2 opacity-75"><i class="fas fa-check-circle fa-2x text-white"></i></div>
                         <h2 class="display-5 fw-bold text-white mb-1">{{ $data['shortlistedApplications'] }}</h2>
                         <p class="mb-0 text-white fw-medium opacity-75 small">Lolos Seleksi</p>
                     </div>
                 </div>
             </div>
-            <div class="col-md-4">
-                <div class="card bg-dark shadow-sm h-100 border-0 overflow-hidden" style="border-radius: 16px;">
-                    <div class="card-body text-center py-4 position-relative">
-                        <div class="mb-2 opacity-25 position-absolute end-0 top-0 p-3"><i class="fas fa-bookmark fa-3x text-white"></i></div>
+             <div class="col-md-4">
+                <div class="card bg-secondary shadow-sm h-100 border-0">
+                    <div class="card-body text-center py-4">
+                        <div class="mb-2 opacity-75"><i class="fas fa-bookmark fa-2x text-white"></i></div>
                         <h2 class="display-5 fw-bold text-white mb-1">{{ $data['savedJobs'] }}</h2>
                         <p class="mb-0 text-white fw-medium opacity-75 small">Tersimpan</p>
                     </div>
@@ -65,10 +38,14 @@
         <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px;">
             <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
                 <h6 class="mb-0 fw-bold text-dark"><i class="fas fa-history me-2 text-primary"></i>Aktivitas Lamaran</h6>
-                <a href="{{ route('seeker.applications.index') }}" class="small text-decoration-none fw-bold">Lihat Semua</a>
+                <a href="{{ route('seeker.kraepelin.instructions', $testInvitation->id) }}" 
+                class="btn btn-light btn-sm fw-bold px-4 rounded-pill shadow-sm text-indigo">
+                    <i class="fas fa-play me-2"></i> 
+                    {{ $testInvitation->status === 'test_in_progress' ? 'LANJUTKAN SEKARANG' : 'MULAI TES' }}
+                </a>
             </div>
             <div class="card-body p-0">
-                <div class="table-responsive">
+                 <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0">
                         <thead class="bg-light">
                             <tr>
@@ -171,7 +148,7 @@
                     </div>
                 </a>
                 @empty
-                <div class="p-4 text-center text-muted small">Tidak ada lowongan unggulan saat ini.</div>
+                    <div class="p-4 text-center text-muted">Tidak ada lowongan unggulan saat ini.</div>
                 @endforelse
             </div>
             <div class="card-footer bg-white text-center py-3 border-0">
@@ -180,84 +157,4 @@
         </div>
     </div>
 </div>
-
-<style>
-    /* Animasi untuk Rekomendasi Kerja (List Group) */
-    .list-group-item-action {
-        border-left: 0px solid #0d6efd;
-        /* Posisi awal */
-        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-    }
-
-    .list-group-item-action:hover {
-        background-color: #f0f7ff !important;
-        /* Biru sangat muda */
-        border-left: 5px solid #0d6efd;
-        /* Garis aksen muncul */
-        padding-left: 1.25rem !important;
-        /* Sedikit bergeser ke kanan */
-        transform: scale(1.01);
-        /* Efek sedikit membesar */
-        z-index: 1;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
-    }
-
-    /* Animasi untuk Baris Tabel (Aktivitas Lamaran) */
-    .table-hover tbody tr {
-        transition: all 0.2s ease;
-        cursor: pointer;
-    }
-
-    .table-hover tbody tr:hover {
-        background-color: #f8f9fa;
-        transform: translateY(-2px);
-        /* Efek melayang */
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
-    }
-
-    /* Utilitas Tambahan */
-    .text-indigo {
-        color: #4e73df;
-    }
-
-    .extra-small {
-        font-size: 0.7rem;
-    }
-
-    /* Efek Smooth untuk Badge */
-    .badge {
-        transition: transform 0.2s ease;
-    }
-
-    tr:hover .badge {
-        transform: scale(1.05);
-    }
-
-    /* CSS UNTUK BANNER KRAEPELIN */
-    .alert-indigo {
-        background: linear-gradient(135deg, #6366f1 0%, #4338ca 100%);
-        color: white;
-    }
-
-    .text-indigo {
-        color: #4338ca;
-    }
-
-    .bg-indigo {
-        background-color: #4338ca;
-    }
-
-    .extra-small {
-        font-size: 0.7rem;
-    }
-
-    .smaller {
-        font-size: 0.75rem;
-    }
-
-    .hover-row:hover {
-        background-color: #f8fafc;
-    }
-</style>
-
 @endsection

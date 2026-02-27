@@ -102,7 +102,6 @@
         </span>
     </div>
 </div>
-
 <div class="card app-card border-0">
     <div class="table-responsive">
         <table class="table align-middle mb-0">
@@ -121,7 +120,7 @@
                     <td>
                         <div class="d-flex align-items-center">
                             <img src="https://ui-avatars.com/api/?name={{ urlencode($application->user->name) }}&background=f1f5f9&color=4338ca" 
-                                 class="rounded-circle me-3" width="38" alt="Avatar">
+                                class="rounded-circle me-3" width="38" alt="Avatar">
                             <div>
                                 <div class="fw-bold text-dark" style="font-size: 0.9rem;">{{ $application->user->name }}</div>
                                 <div class="text-muted extra-small" style="font-size: 0.75rem;">{{ $application->user->email }}</div>

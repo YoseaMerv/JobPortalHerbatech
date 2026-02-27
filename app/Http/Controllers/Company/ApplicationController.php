@@ -35,27 +35,34 @@ class ApplicationController extends Controller
     return view('company.applications.show', compact('application'));
     }
 
+
     public function updateStatus(Request $request, JobApplication $application)
     {
-        $this->authorizeAccess($application);
+        try {
+            $request->validate([
+                'status' => 'required|string',
+                'notes' => 'nullable|string'
+            ]);
 
-        $request->validate([
-            'status' => 'required|in:pending,reviewed,shortlisted,test_invited,test_in_progress,test_completed,interview,accepted,rejected',
-        ]);
+            $application->update([
+                'status' => $request->status,
+                'notes' => $request->notes ?? $application->notes
+            ]);
 
-        $oldStatus = $application->status;
-        $newStatus = $request->status;
+            // Pastikan mengembalikan JSON dan status 200
+            return response()->json([
+                'success' => true,
+                'message' => 'Status berhasil diperbarui ke ' . $application->status_label,
+                'data' => $application
+            ], 200);
 
-        $application->update([
-            'status' => $newStatus
-        ]);
-
-        if ($newStatus === 'test_invited' && $oldStatus !== 'test_invited') {
-            // Pengiriman email otomatis berisi link tes
-            // Mail::to($application->user->email)->send(new KraepelinTestInvitation($application));
+        } catch (\Exception $e) {
+            // Jika ada error, kembalikan status 422 atau 500
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
         }
-
-        return back()->with('success', 'Status lamaran berhasil diperbarui menjadi: ' . $application->status_label);
     }
 
     public function downloadCv(JobApplication $application)
@@ -67,6 +74,15 @@ class ApplicationController extends Controller
         }
 
         return Storage::disk('public')->download($application->cv_path);
+    }
+
+    public function downloadCover(JobApplication $application)
+    {
+        if ($application->cover_letter_path && Storage::exists($application->cover_letter_path)) {
+            return Storage::download($application->cover_letter_path);
+        }
+        
+        return back()->with('error', 'File tidak ditemukan.');
     }
 
     private function authorizeAccess(JobApplication $application)
