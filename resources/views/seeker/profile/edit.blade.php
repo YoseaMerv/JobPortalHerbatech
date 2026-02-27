@@ -2,6 +2,44 @@
 
 @section('content')
 <div class="container py-5">
+    {{-- LOGIKA: Menghitung Kelengkapan Profil --}}
+    @php
+    $completeness = 0;
+
+    // 1. Foto Profil (Cek kolom avatar di tabel users)
+    if(!empty($user->avatar)) $completeness += 25;
+
+    // 2. Tentang Saya (Cek kolom summary di database Anda)
+    if(!empty($profile->summary)) $completeness += 25;
+
+    // 3. Resume/CV (Cek kolom resume_path)
+    if(!empty($profile->resume_path)) $completeness += 25;
+
+    // 4. Riwayat (Minimal punya 1 Pendidikan ATAU 1 Pengalaman)
+    // Menggunakan count() agar lebih pasti
+    if($profile->experiences->count() > 0 || $profile->educations->count() > 0) {
+    $completeness += 25;
+    }
+    @endphp
+
+    {{-- Widget Progress Kelengkapan Profil --}}
+    <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6 class="fw-bold mb-0">Kelengkapan Profil</h6>
+            <span class="badge bg-primary rounded-pill">{{ $completeness }}%</span>
+        </div>
+        <div class="progress" style="height: 10px; border-radius: 5px;">
+            <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar"
+                style="width: {{ $completeness }}%" aria-valuenow="{{ $completeness }}" aria-valuemin="0" aria-valuemax="100"></div>
+        </div>
+        @if($completeness < 100)
+            <small class="text-muted mt-2 d-block">
+            <i class="fas fa-info-circle me-1"></i>
+            Lengkapi profil hingga <strong>100%</strong> untuk membuka fitur lamaran kerja otomatis.
+            </small>
+            @endif
+    </div>
+
     @if($isLocked)
     <div class="alert alert-warning border-0 shadow-sm rounded-4 p-4 mb-4 d-flex align-items-center">
         <div class="icon-box bg-warning text-white me-3 shadow-sm">
@@ -9,12 +47,13 @@
         </div>
         <div>
             <h6 class="fw-bold mb-1">Profil Dikunci Sementara</h6>
-            <p class="small mb-0 opacity-75">Anda tidak dapat mengubah profil karena sedang memiliki lamaran aktif bertatus <strong>Pending</strong>. Tunggu hingga proses selesai untuk memperbarui data kembali.</p>
+            <p class="small mb-0 opacity-75">Anda tidak dapat mengubah profil karena sedang memiliki lamaran aktif berstatus <strong>Pending</strong>. Tunggu hingga proses selesai untuk memperbarui data kembali.</p>
         </div>
     </div>
     @endif
 
     <div class="row g-4">
+        {{-- Sidebar Tab Navigation --}}
         <div class="col-md-3">
             <div class="card border-0 shadow-sm rounded-4 sticky-top" style="top: 100px;">
                 <div class="card-body p-2">
@@ -48,19 +87,43 @@
             </div>
         </div>
 
+        {{-- Tab Contents --}}
         <div class="col-md-9">
             <div class="tab-content">
 
+                {{-- Tab 1: Identitas --}}
                 <div class="tab-pane fade show active" id="identitas" role="tabpanel">
                     <div class="card border-0 shadow-sm rounded-4">
                         <div class="card-body p-4 p-md-5">
                             <h4 class="fw-bold mb-1 text-dark">Informasi Pribadi</h4>
                             <p class="text-muted mb-4 small">Lengkapi data diri Anda untuk mempermudah HR menghubungi Anda.</p>
 
-                            <form action="{{ route('seeker.profile.update') }}" method="POST">
+                            {{-- PERBAIKAN: Ditambahkan enctype agar bisa upload foto --}}
+                            <form action="{{ route('seeker.profile.update') }}" method="POST" enctype="multipart/form-data">
                                 @csrf
                                 @method('PATCH')
                                 <div class="row g-4">
+                                    {{-- Upload Foto Profil --}}
+                                    <div class="col-md-12 mb-3 text-center">
+                                        <div class="position-relative d-inline-block">
+                                            <img src="{{ $user->avatar ? asset('storage/' . $user->avatar) : asset('assets/images/default-avatar.png') }}"
+                                                class="rounded-circle shadow-sm border p-1"
+                                                style="width: 120px; height: 120px; object-fit: cover;"
+                                                id="avatarPreview">
+
+                                            @if(!$isLocked)
+                                            <label for="avatarInput" class="btn btn-sm btn-primary position-absolute bottom-0 end-0 rounded-circle shadow" style="width: 32px; height: 32px; padding: 0; line-height: 32px; cursor: pointer;">
+                                                <i class="fas fa-camera"></i>
+                                            </label>
+                                            <input type="file" name="avatar" class="d-none" id="avatarInput" accept="image/*" onchange="previewImage(this)">
+                                            @endif
+                                        </div>
+                                        <div class="mt-2 text-center">
+                                            <label class="form-label-custom d-block">Foto Profil</label>
+                                            <small class="text-muted">Gunakan foto formal untuk kesan profesional</small>
+                                        </div>
+                                    </div>
+
                                     <div class="col-md-6">
                                         <label class="form-label-custom">Nama Lengkap</label>
                                         <input type="text" name="name" class="form-control input-style" value="{{ $user->name }}" required {{ $isLocked ? 'readonly' : '' }}>
@@ -88,6 +151,7 @@
                     </div>
                 </div>
 
+                {{-- Tab 2: Bio & Skill --}}
                 <div class="tab-pane fade" id="professional" role="tabpanel">
                     <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5">
                         <h4 class="fw-bold mb-1 text-dark">Profil Profesional</h4>
@@ -98,7 +162,9 @@
                             @method('PATCH')
                             <div class="mb-5">
                                 <label class="form-label-custom">Tentang Saya / Ringkasan</label>
-                                <textarea name="summary" class="form-control input-style p-3" rows="6" style="resize: none;" placeholder="Tuliskan pengalaman singkat dan keahlian utama Anda..." {{ $isLocked ? 'readonly' : '' }}>{{ $profile->summary }}</textarea>
+                                {{-- PERBAIKAN: Name diganti 'about' agar sinkron dengan JobController --}}
+                                <textarea name="about" class="form-control input-style p-3" rows="6"
+                                    placeholder="Tuliskan pengalaman singkat...">{{ $profile->summary }}</textarea>
                             </div>
 
                             <div class="mb-4">
@@ -125,6 +191,7 @@
                     </div>
                 </div>
 
+                {{-- Tab 3: Riwayat Karier & Pendidikan --}}
                 <div class="tab-pane fade" id="history" role="tabpanel">
                     <div class="card border-0 shadow-sm rounded-4 mb-4 overflow-hidden">
                         <div class="card-body p-4 p-md-5">
@@ -212,6 +279,7 @@
                     </div>
                 </div>
 
+                {{-- Tab 4: Resume --}}
                 <div class="tab-pane fade" id="documents" role="tabpanel">
                     <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5">
                         <h4 class="fw-bold mb-1 text-dark">Resume & Portofolio</h4>
@@ -264,7 +332,7 @@
     </div>
 </div>
 
-{{-- Perbaikan Style agar Lebih Konsisten & Berkesan Premium --}}
+{{-- Styles --}}
 <style>
     body {
         background-color: #f8f9fa;
@@ -286,10 +354,10 @@
         color: #495057;
     }
 
-    /* Navigasi */
     .list-group-item {
         transition: all 0.2s;
         border: none;
+        cursor: pointer;
     }
 
     .list-group-item.active {
@@ -303,7 +371,6 @@
         color: white;
     }
 
-    /* Input */
     .input-style {
         background-color: #fcfcfc;
         border: 1.5px solid #f1f3f5;
@@ -329,7 +396,6 @@
         text-transform: uppercase;
     }
 
-    /* Utility */
     .border-dashed {
         border-style: dashed !important;
         border-width: 2px !important;
@@ -352,7 +418,6 @@
         opacity: 1 !important;
     }
 
-    /* Bahasa */
     .language-card label {
         padding: 14px;
         border: 2px solid #f1f3f5;
@@ -370,7 +435,6 @@
         box-shadow: 0 4px 10px rgba(13, 110, 253, 0.2);
     }
 
-    /* Timeline */
     .timeline-item::before {
         content: "";
         position: absolute;
@@ -393,6 +457,19 @@
         box-shadow: 0 0 0 4px rgba(13, 110, 253, 0.1);
     }
 </style>
+
+{{-- Scripts --}}
+<script>
+    function previewImage(input) {
+        if (input.files && input.files[0]) {
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('avatarPreview').src = e.target.result;
+            }
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+</script>
 
 @include('seeker.profile.partials.modal-experience')
 @include('seeker.profile.partials.modal-education')

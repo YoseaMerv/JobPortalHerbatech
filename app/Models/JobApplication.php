@@ -19,6 +19,7 @@ class JobApplication extends Model
     const STATUS_INTERVIEW = 'interview';
     const STATUS_ACCEPTED = 'accepted';
     const STATUS_REJECTED = 'rejected';
+    
 
     protected $fillable = [
         'job_id',
@@ -127,3 +128,4 @@ class JobApplication extends Model
         };
     }
 }
+    

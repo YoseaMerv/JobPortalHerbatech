@@ -34,48 +34,59 @@ class ProfileController extends Controller
         $user = Auth::user();
         $profile = $user->seekerProfile;
 
-        // Jika profil terkunci, larang update
-        if (Auth::user()->applications()->where('status', 'pending')->exists()) {
-            return redirect()->back()->with('error', 'Profil tidak dapat diubah selama Anda memiliki lamaran aktif.');
+        // 1. Proteksi penguncian profil (jika ada lamaran pending)
+        if ($user->applications()->where('status', 'pending')->exists()) {
+            return redirect()->back()->with('error', 'Profil dikunci karena ada lamaran aktif.');
         }
 
-        // Pastikan validasi mencakup semua field yang mungkin dikirim
+        // 2. Validasi (Semua field dibuat nullable agar tidak error saat kirim form terpisah)
         $validated = $request->validate([
-            'name' => 'sometimes|required|string|max:255',
+            'name' => 'nullable|string|max:255',
+            'avatar' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
             'phone' => 'nullable|string|max:20',
             'home_location_details' => 'nullable|string|max:255',
-            'summary' => 'nullable|string',
+            'about' => 'nullable|string',
             'languages' => 'nullable|array',
-            'resume' => 'nullable|file|mimes:pdf,doc,docx,txt,rtf|max:5120',
+            'resume' => 'nullable|file|mimes:pdf,doc,docx|max:5120',
         ]);
 
-        // Update Nama User jika ada di request
-        if ($request->has('name')) {
-            $user->update(['name' => $validated['name']]);
+        // 3. Update User (Hanya jika input dikirim)
+        if ($request->filled('name')) {
+            $user->name = $request->name;
         }
 
-        // Handle Upload Resume (Poin 10)
+        if ($request->hasFile('avatar')) {
+            if ($user->avatar && \Storage::disk('public')->exists($user->avatar)) {
+                \Storage::disk('public')->delete($user->avatar);
+            }
+            $user->avatar = $request->file('avatar')->store('avatars', 'public');
+        }
+        $user->save();
+
+        // 4. Update Resume (Hanya jika ada file baru)
         if ($request->hasFile('resume')) {
             if ($profile->resume_path) {
-                Storage::disk('public')->delete($profile->resume_path);
+                \Storage::disk('public')->delete($profile->resume_path);
             }
             $file = $request->file('resume');
-            $path = $file->store('resumes', 'public');
-            $profile->resume_path = $path;
+            $profile->resume_path = $file->store('resumes', 'public');
             $profile->resume_filename = $file->getClientOriginalName();
-            $profile->save();
         }
 
-        // Update data profil dengan aman (hanya data yang ada di request)
-        // Ini mencegah error "Undefined array key"
-        $profile->update($request->only([
-            'phone', 
-            'home_location_details', 
-            'summary', 
-            'languages'
-        ]));
+        // 5. SOLUSI DATA NULL: Ambil input dan buang yang kosong
+        $profileData = collect([
+            'phone' => $request->phone,
+            'home_location_details' => $request->home_location_details,
+            'summary' => $request->about, // Simpan input 'about' ke kolom 'summary'
+            'languages' => $request->languages,
+        ])->filter(fn($value) => !is_null($value))->toArray();
 
-        return back()->with('success', 'Profil berhasil diperbarui!');
+        // Hanya jalankan update jika ada data yang dikirim dari form tersebut
+        if (!empty($profileData)) {
+            $profile->update($profileData);
+        }
+
+        return back()->with('success', 'Perubahan berhasil disimpan!');
     }
 
     public function storeSkill(Request $request)
@@ -116,7 +127,7 @@ class ProfileController extends Controller
             'start_date' => 'required|date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
         ]);
-        
+
         // Pastikan profil seeker ada
         $profile = SeekerProfile::firstOrCreate(['user_id' => Auth::id()]);
 
@@ -132,7 +143,7 @@ class ProfileController extends Controller
         if ($experience->seeker_profile_id !== auth()->user()->seekerProfile->id) {
             abort(403);
         }
-        
+
         $experience->delete();
         return back()->with('success', 'Riwayat karier berhasil dihapus.');
     }

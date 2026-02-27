@@ -17,9 +17,9 @@ class KraepelinController extends Controller
     {
         $application = JobApplication::with('job.company')->findOrFail($applicationId);
 
-        // Cek apakah status mengizinkan akses (Invited atau In Progress)
+        // Validasi status lamaran
         if (!in_array($application->status, [JobApplication::STATUS_TEST_INVITED, JobApplication::STATUS_TEST_IN_PROGRESS])) {
-            return redirect()->route('seeker.dashboard')->with('error', 'Akses tes ditolak atau Anda sudah menyelesaikan tes.');
+            return redirect()->route('seeker.dashboard')->with('error', 'Akses ditolak.');
         }
 
         return view('seeker.kraepelin.instructions', compact('application'));

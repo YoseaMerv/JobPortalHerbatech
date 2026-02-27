@@ -39,6 +39,7 @@ class SeekerProfile extends Model
         'preferred_job_type',
         'expected_salary',
         'availability',
+        
     ];
 
     protected $casts = [
