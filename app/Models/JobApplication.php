@@ -9,7 +9,7 @@ class JobApplication extends Model
 {
     use HasFactory;
 
-    // Konstanta Status
+    // --- KONSTANTA STATUS ---
     const STATUS_PENDING = 'pending';
     const STATUS_REVIEWED = 'reviewed';
     const STATUS_SHORTLISTED = 'shortlisted';
@@ -31,14 +31,25 @@ class JobApplication extends Model
 
     protected $casts = [
         'applied_at' => 'datetime',
-        'answers' => 'array',
     ];
+
+    public static function getAllStatuses(): array
+    {
+        return [
+            self::STATUS_PENDING          => 'Menunggu Review',
+            self::STATUS_REVIEWED         => 'Sedang Ditinjau',
+            self::STATUS_SHORTLISTED      => 'Lolos Seleksi Berkas',
+            self::STATUS_TEST_INVITED     => 'Undangan Tes',
+            self::STATUS_TEST_IN_PROGRESS => 'Sedang Mengerjakan Tes',
+            self::STATUS_TEST_COMPLETED   => 'Tes Selesai',
+            self::STATUS_INTERVIEW        => 'Wawancara',
+            self::STATUS_ACCEPTED         => 'Diterima',
+            self::STATUS_REJECTED         => 'Ditolak',
+        ];
+    }
 
     // --- RELATIONSHIPS ---
 
-    /**
-     * Relasi ke Tes Kraepelin (TAMBAHKAN INI)
-     */
     public function kraepelinTest()
     {
         return $this->hasOne(KraepelinTest::class);
@@ -54,76 +65,40 @@ class JobApplication extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function seekerProfile()
-    {
-        return $this->hasOneThrough(SeekerProfile::class, User::class, 'id', 'user_id', 'user_id', 'id');
-    }
-
-    // --- HELPER METHODS ---
-
-    public function isPending(): bool
-    {
-        return $this->status === self::STATUS_PENDING;
-    }
-
-    public function isShortlisted(): bool
-    {
-        return $this->status === self::STATUS_SHORTLISTED;
-    }
-
-    public function isInvitedToTest(): bool
-    {
-        return $this->status === self::STATUS_TEST_INVITED;
-    }
-
-    public function isTestInProgress(): bool
-    {
-        return $this->status === self::STATUS_TEST_IN_PROGRESS;
-    }
-
-    public function isTestCompleted(): bool
-    {
-        return $this->status === self::STATUS_TEST_COMPLETED;
-    }
-
-    // --- ACCESSORS ---
-
-    /**
-     * Mendapatkan class warna badge Bootstrap berdasarkan status.
-     */
-    public function getStatusBadgeAttribute(): string
-    {
-        $badges = [
-            'pending'          => 'warning',
-            'reviewed'         => 'secondary',
-            'shortlisted'      => 'info',
-            'test_invited'     => 'primary', 
-            'test_in_progress' => 'warning',
-            'test_completed'   => 'success',
-            'interview'        => 'dark',
-            'accepted'         => 'success',
-            'rejected'         => 'danger',
-        ];
-
-        return $badges[$this->status] ?? 'secondary';
-    }
-
-    /**
-     * Mendapatkan label teks Indonesia untuk status.
-     */
+    // --- ACCESSORS (UI Logic) ---
     public function getStatusLabelAttribute(): string
     {
+        return self::getAllStatuses()[$this->status] ?? ucfirst($this->status);
+    }
+
+    public function getStatusBadgeAttribute(): string
+    {
         return match($this->status) {
-            'pending'          => 'Menunggu',
-            'reviewed'         => 'Ditinjau',
-            'shortlisted'      => 'Terpilih',
-            'test_invited'     => 'Undangan Tes',
-            'test_in_progress' => 'Sedang Mengerjakan',
-            'test_completed'   => 'Ujian Selesai',
-            'interview'        => 'Wawancara',
-            'accepted'         => 'Diterima',
-            'rejected'         => 'Ditolak',
-            default            => ucfirst($this->status),
+            self::STATUS_PENDING          => 'warning',
+            self::STATUS_REVIEWED         => 'secondary',
+            self::STATUS_SHORTLISTED      => 'info',
+            self::STATUS_TEST_INVITED     => 'primary',
+            self::STATUS_TEST_IN_PROGRESS => 'warning',
+            self::STATUS_TEST_COMPLETED   => 'success',
+            self::STATUS_INTERVIEW        => 'dark',
+            self::STATUS_ACCEPTED         => 'success',
+            self::STATUS_REJECTED         => 'danger',
+            default                       => 'light',
+        };
+    }
+
+    public function getStatusIconAttribute(): string
+    {
+        return match($this->status) {
+            self::STATUS_PENDING          => 'fa-clock',
+            self::STATUS_REVIEWED         => 'fa-eye',
+            self::STATUS_SHORTLISTED      => 'fa-user-check',
+            self::STATUS_TEST_INVITED     => 'fa-file-signature',
+            self::STATUS_TEST_COMPLETED   => 'fa-poll-h',
+            self::STATUS_INTERVIEW        => 'fa-comments',
+            self::STATUS_ACCEPTED         => 'fa-check-double',
+            self::STATUS_REJECTED         => 'fa-times-circle',
+            default                       => 'fa-info-circle',
         };
     }
 }
