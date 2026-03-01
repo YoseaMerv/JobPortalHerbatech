@@ -96,7 +96,7 @@ Route::prefix('company')->name('company.')->middleware(['auth', 'verified', 'rol
     Route::post('jobs/{job}/publish', [\App\Http\Controllers\Company\JobController::class, 'publish'])->name('jobs.publish');
     Route::post('jobs/{job}/close', [\App\Http\Controllers\Company\JobController::class, 'close'])->name('jobs.close');
 
-    // Applications (Merapikan duplikasi rute)
+    // Applications
     Route::get('applications', [\App\Http\Controllers\Company\ApplicationController::class, 'index'])->name('applications.index');
     Route::get('applications/{application}', [\App\Http\Controllers\Company\ApplicationController::class, 'show'])->name('applications.show');
     Route::put('applications/{application}/status', [\App\Http\Controllers\Company\ApplicationController::class, 'updateStatus'])->name('applications.update-status');
@@ -143,12 +143,15 @@ Route::prefix('seeker')->name('seeker.')->middleware(['auth', 'verified', 'role:
     Route::get('/applications/{application}', [\App\Http\Controllers\Seeker\ApplicationController::class, 'show'])->name('applications.show');
     Route::delete('/applications/{application}', [\App\Http\Controllers\Seeker\ApplicationController::class, 'destroy'])->name('applications.destroy');
 
+    // Saved Jobs
     Route::get('/saved-jobs', [\App\Http\Controllers\Seeker\SavedJobController::class, 'index'])->name('saved-jobs.index');
 
-    // Kraepelin Test untuk Seeker
-    Route::get('/kraepelin-test/{application}/instructions', [KraepelinController::class, 'showInstructions'])->name('kraepelin.instructions');
-    Route::get('/kraepelin-test/{application}/start', [KraepelinController::class, 'startTest'])->name('kraepelin.start');
+    // Kraepelin Test untuk Seeker (Digabungkan agar rapi & aman dari error nama)
+    Route::prefix('kraepelin-test')->name('kraepelin.')->group(function () {
+        Route::get('/{application}/instructions', [KraepelinController::class, 'showInstructions'])->name('instructions');
+        Route::get('/{application}/start', [KraepelinController::class, 'startTest'])->name('start');
+        Route::post('/{testId}/submit', [KraepelinController::class, 'submitTest'])->name('submit');
+        Route::get('/{application}/completed', [KraepelinController::class, 'showCompleted'])->name('completed');
+    });
 
-    // RUTE BARU: Submit jawaban Kraepelin via Axios/AJAX
-    Route::post('/kraepelin-test/{test}/submit', [KraepelinController::class, 'submitTest'])->name('kraepelin.submit');
 });

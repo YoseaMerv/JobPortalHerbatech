@@ -140,7 +140,7 @@
     const submitUrl = "{{ route('seeker.kraepelin.submit', ':testId') }}".replace(':testId', testId);
     
     let currentCol = 0;
-    let columnTimeLimit = 45; // Waktu diubah menjadi 45 detik
+    let columnTimeLimit = 1; // Waktu diubah menjadi 45 detik
     let timerInterval;
     let isSubmitting = false;
     let allAnswers = {};
@@ -173,8 +173,10 @@
         activeEl.classList.add('active');
         activeEl.querySelectorAll('.input-box').forEach(input => input.disabled = false);
         
-        const inputsInCol = activeEl.querySelectorAll('.input-box');
-        if(inputsInCol.length > 0) inputsInCol[inputsInCol.length - 1].focus();
+        // PENTING: Fokus awal ke input paling BAWAH.
+        // Dalam HTML yang Anda buat, input paling bawah adalah index 0 (karena array di-reverse)
+        const firstInput = document.getElementById(`input-${currentCol}-0`);
+        if(firstInput) firstInput.focus();
         
         activeEl.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
 
@@ -233,12 +235,13 @@
                 window.location.href = response.data.redirect;
             }
         } catch (error) {
-            console.error("Submission Error:", error);
-            alert('Terjadi kesalahan koneksi. Mencoba kirim ulang...');
+            console.error("Submission Error Detail:", error.response?.data);
+            alert('Gagal menyimpan hasil: ' + (error.response?.data?.message || 'Error Server 500'));
+            
             isSubmitting = false;
             document.body.style.pointerEvents = 'auto';
             loadingModal.hide();
-            finishTest();
+
         }
     }
 
@@ -246,18 +249,25 @@
         startColumnTimer();
     });
 
+    // ---------------------------------------------------------
+    // EVENT LISTENER UNTUK PINDAH FOKUS OTOMATIS
+    // ---------------------------------------------------------
     document.addEventListener('input', function(e) {
         if (e.target.classList.contains('input-box')) {
-            if (e.target.value.length >= 1) {
-                if (e.target.value.length > 1) {
-                    e.target.value = e.target.value.slice(-1);
-                }
+            // Ambil angka terakhir jika terisi lebih dari 1 digit
+            let val = e.target.value;
+            if (val.length > 1) {
+                e.target.value = val.slice(-1);
+            }
 
+            // Jika input sudah terisi 1 angka, pindah ke field atasnya
+            if (e.target.value.length === 1) {
                 const col = e.target.dataset.col;
                 const currentRow = parseInt(e.target.dataset.row);
                 
-                // Navigasi ke ATAS (Row + 1 karena urutan reverse visual)
+                // Cari input di ATAS-nya (index bertambah karena urutan dari bawah ke atas)
                 const nextInput = document.getElementById(`input-${col}-${currentRow + 1}`);
+                
                 if (nextInput) {
                     nextInput.focus();
                 }
@@ -270,7 +280,9 @@
             const col = e.target.dataset.col;
             const currentRow = parseInt(e.target.dataset.row);
 
+
             if (e.key === "Backspace" && e.target.value === "") {
+                e.preventDefault(); 
                 const prevInput = document.getElementById(`input-${col}-${currentRow - 1}`);
                 if (prevInput) prevInput.focus();
             }

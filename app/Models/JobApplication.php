@@ -53,7 +53,7 @@ class JobApplication extends Model
 
     public function kraepelinTest()
     {
-        return $this->hasOne(KraepelinTest::class);
+        return $this->hasOne(KraepelinTest::class)->latestOfMany();
     }
 
     public function job()

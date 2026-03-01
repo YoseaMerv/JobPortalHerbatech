@@ -16,6 +16,7 @@ class ProfileController extends Controller
     {
         $user = Auth::user();
 
+        // 1. Pastikan profil ada
         $profile = SeekerProfile::firstOrCreate(
             ['user_id' => $user->id],
             ['is_public' => true]
@@ -23,10 +24,22 @@ class ProfileController extends Controller
 
         $profile->load(['experiences', 'educations', 'skills', 'certificates']);
 
-        // Gabungkan isLocked dan profile ke dalam satu return
+        // 2. Proteksi penguncian profil (Jika ada lamaran pending)
         $isLocked = $user->applications()->where('status', 'pending')->exists();
 
-        return view('seeker.profile.edit', compact('user', 'profile', 'isLocked'));
+        // 3. Hitung kelengkapan profil langsung dari Controller (Lebih aman)
+        $points = 0;
+        $totalPoints = 5;
+
+        if (!empty($user->avatar)) $points++;
+        if (!empty($profile->summary)) $points++;
+        if (!empty($profile->phone) && !empty($profile->home_location_details)) $points++; // Identitas dasar
+        if ($profile->experiences->count() > 0 || $profile->educations->count() > 0) $points++;
+        if (!empty($profile->resume_path)) $points++;
+
+        $completeness = ($points / $totalPoints) * 100;
+
+        return view('seeker.profile.edit', compact('user', 'profile', 'isLocked', 'completeness'));
     }
 
     public function update(Request $request)
@@ -34,59 +47,74 @@ class ProfileController extends Controller
         $user = Auth::user();
         $profile = $user->seekerProfile;
 
-        // 1. Proteksi penguncian profil (jika ada lamaran pending)
+        // 1. Proteksi penguncian profil
         if ($user->applications()->where('status', 'pending')->exists()) {
-            return redirect()->back()->with('error', 'Profil dikunci karena ada lamaran aktif.');
+            return redirect()->back()->with('error', 'Profil dikunci karena Anda memiliki lamaran aktif (Pending).');
         }
 
-        // 2. Validasi (Semua field dibuat nullable agar tidak error saat kirim form terpisah)
-        $validated = $request->validate([
-            'name' => 'nullable|string|max:255',
-            'avatar' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
-            'phone' => 'nullable|string|max:20',
+        // 2. Validasi (Semua nullable agar mendukung form terpisah di tiap Tab)
+        $request->validate([
+            'name'                  => 'nullable|string|max:255',
+            'avatar'                => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            'phone'                 => 'nullable|string|max:20',
             'home_location_details' => 'nullable|string|max:255',
-            'about' => 'nullable|string',
-            'languages' => 'nullable|array',
-            'resume' => 'nullable|file|mimes:pdf,doc,docx|max:5120',
+            'about'                 => 'nullable|string', // Untuk kolom summary
+            'languages'             => 'nullable|array',
+            'resume'                => 'nullable|file|mimes:pdf,doc,docx|max:5120',
         ]);
 
-        // 3. Update User (Hanya jika input dikirim)
-        if ($request->filled('name')) {
+        // 3. Update User (Hanya jika field dikirim dari form Identitas)
+        if ($request->has('name')) {
             $user->name = $request->name;
         }
 
         if ($request->hasFile('avatar')) {
-            if ($user->avatar && \Storage::disk('public')->exists($user->avatar)) {
-                \Storage::disk('public')->delete($user->avatar);
+            if ($user->avatar && Storage::disk('public')->exists($user->avatar)) {
+                Storage::disk('public')->delete($user->avatar);
             }
             $user->avatar = $request->file('avatar')->store('avatars', 'public');
         }
-        $user->save();
+        
+        // Simpan perubahan User jika ada
+        if ($user->isDirty()) {
+            $user->save();
+        }
 
-        // 4. Update Resume (Hanya jika ada file baru)
+        // 4. Update Resume (Hanya jika dikirim dari form Resume)
         if ($request->hasFile('resume')) {
-            if ($profile->resume_path) {
-                \Storage::disk('public')->delete($profile->resume_path);
+            if ($profile->resume_path && Storage::disk('public')->exists($profile->resume_path)) {
+                Storage::disk('public')->delete($profile->resume_path);
             }
             $file = $request->file('resume');
             $profile->resume_path = $file->store('resumes', 'public');
             $profile->resume_filename = $file->getClientOriginalName();
         }
 
-        // 5. SOLUSI DATA NULL: Ambil input dan buang yang kosong
-        $profileData = collect([
-            'phone' => $request->phone,
-            'home_location_details' => $request->home_location_details,
-            'summary' => $request->about, // Simpan input 'about' ke kolom 'summary'
-            'languages' => $request->languages,
-        ])->filter(fn($value) => !is_null($value))->toArray();
-
-        // Hanya jalankan update jika ada data yang dikirim dari form tersebut
-        if (!empty($profileData)) {
-            $profile->update($profileData);
+        // 5. Update SeekerProfile (Deteksi field apa saja yang dikirim oleh form)
+        // Kita menggunakan $request->has() untuk memastikan form mana yang sedang di-submit
+        
+        // Jika form Identitas yang disubmit
+        if ($request->has('phone')) {
+            $profile->phone = $request->phone;
+        }
+        if ($request->has('home_location_details')) {
+            $profile->home_location_details = $request->home_location_details;
         }
 
-        return back()->with('success', 'Perubahan berhasil disimpan!');
+        // Jika form Profesional (Bio & Bahasa) yang disubmit
+        if ($request->has('about')) {
+            $profile->summary = $request->about;
+        }
+        if ($request->has('languages')) {
+            $profile->languages = $request->languages ?? []; // Kosongkan jika uncheck semua
+        }
+
+        // Simpan perubahan Profil jika ada
+        if ($profile->isDirty()) {
+            $profile->save();
+        }
+
+        return back()->with('success', 'Perubahan profil berhasil disimpan!');
     }
 
     public function storeSkill(Request $request)
@@ -97,7 +125,6 @@ class ProfileController extends Controller
         ]);
 
         Auth::user()->seekerProfile->skills()->create($request->all());
-
         return back()->with('success', 'Keahlian berhasil ditambahkan!');
     }
 
@@ -111,7 +138,6 @@ class ProfileController extends Controller
             'description' => 'nullable|string',
         ]);
 
-        // Ambil atau buat profil, lalu simpan data sekali saja
         $profile = SeekerProfile::firstOrCreate(['user_id' => Auth::id()]);
         $profile->experiences()->create($validated);
 
@@ -128,10 +154,7 @@ class ProfileController extends Controller
             'end_date' => 'nullable|date|after_or_equal:start_date',
         ]);
 
-        // Pastikan profil seeker ada
         $profile = SeekerProfile::firstOrCreate(['user_id' => Auth::id()]);
-
-        // Simpan data melalui relasi
         $profile->educations()->create($validated);
 
         return back()->with('success', 'Riwayat pendidikan berhasil ditambahkan!');
@@ -139,11 +162,9 @@ class ProfileController extends Controller
 
     public function destroyExperience(Experience $experience)
     {
-        // Pastikan hanya pemilik yang bisa menghapus
         if ($experience->seeker_profile_id !== auth()->user()->seekerProfile->id) {
             abort(403);
         }
-
         $experience->delete();
         return back()->with('success', 'Riwayat karier berhasil dihapus.');
     }
@@ -153,7 +174,6 @@ class ProfileController extends Controller
         if ($education->seeker_profile_id !== auth()->user()->seekerProfile->id) {
             abort(403);
         }
-
         $education->delete();
         return back()->with('success', 'Riwayat pendidikan berhasil dihapus.');
     }
