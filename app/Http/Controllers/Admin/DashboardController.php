@@ -13,12 +13,24 @@ class DashboardController extends Controller
 {
     public function index()
     {
+        $today = now()->format('Y-m-d');
+
         $data = [
-            'totalSeekers' => User::where('role', 'seeker')->count(),
-            'totalJobs' => Job::count(),
-            'totalApplications' => JobApplication::count(),
-            'pendingJobs' => Job::where('status', 'draft')->count(),
-            'recentJobs' => Job::with('company')->latest()->take(5)->get(),
+            // --- Statistik Total ---
+            'totalSeekers'       => User::where('role', 'seeker')->count(),
+            'totalCompanies'     => User::where('role', 'company')->count(),
+            'totalJobs'          => Job::count(),
+            'totalApplications'  => JobApplication::count(),
+            'pendingJobs'        => Job::where('status', 'draft')->count(), // Tetap dipertahankan dari kode asli Anda
+
+            // --- Statistik Hari Ini ---
+            'newUsersCount'      => User::whereDate('created_at', $today)->count(),
+            'newJobsCount'       => Job::whereDate('created_at', $today)->count(),
+            'newAppsCount'       => JobApplication::whereDate('created_at', $today)->count(),
+
+            // --- Data Terkini (Untuk Tabel) ---
+            'recentJobs'         => Job::with('company')->latest()->take(5)->get(),
+            'recentUsers'        => User::where('role', 'seeker')->latest()->take(5)->get(),
             'recentApplications' => JobApplication::with(['job', 'user'])->latest()->take(5)->get(),
         ];
 
@@ -31,9 +43,9 @@ class DashboardController extends Controller
         
         // Statistics logic here
         return response()->json([
-            'jobs' => $this->getJobStatistics($period),
+            'jobs'         => $this->getJobStatistics($period),
             'applications' => $this->getApplicationStatistics($period),
-            'users' => $this->getUserStatistics($period),
+            'users'        => $this->getUserStatistics($period),
         ]);
     }
 

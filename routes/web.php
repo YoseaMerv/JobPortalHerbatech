@@ -77,9 +77,10 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'verified', 'role:ad
     Route::get('reports/applications', [\App\Http\Controllers\Admin\ReportController::class, 'applications'])->name('reports.applications');
     Route::get('reports/users', [\App\Http\Controllers\Admin\ReportController::class, 'users'])->name('reports.users');
 
+    // Settings
     Route::get('settings', [\App\Http\Controllers\Admin\SettingController::class, 'index'])->name('settings.index');
     Route::post('settings', [\App\Http\Controllers\Admin\SettingController::class, 'update'])->name('settings.update');
-});
+    });
 
 // ------------------------------------------------------------------
 // Company Routes (Role: Company)

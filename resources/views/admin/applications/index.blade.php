@@ -1,81 +1,196 @@
 @extends('layouts.admin')
 
-@section('title', 'Semua Lamaran')
-@section('breadcrumb')
-    <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Dashboard</a></li>
-    <li class="breadcrumb-item active">Lamaran</li>
-@endsection
 
 @section('content')
-<div class="card">
-    <div class="card-header">
-        <h3 class="card-title">Lamaran Kerja</h3>
-        <div class="card-tools">
-            <a href="{{ route('admin.applications.create') }}" class="btn btn-primary btn-sm">
-                <i class="fas fa-plus"></i> Tambah Baru
-            </a>
+<style>
+    :root {
+        --slate-50: #f8fafc;
+        --slate-100: #f1f5f9;
+        --slate-200: #e2e8f0;
+        --text-muted: #64748b;
+        --text-heading: #1e293b;
+    }
+    .dashboard-card {
+        border-radius: 12px;
+        border: 1px solid var(--slate-200);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        background: #fff;
+    }
+    .table thead th {
+        background: var(--slate-50);
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text-muted);
+        padding: 12px 20px;
+        border-top: none;
+        border-bottom: 1px solid var(--slate-200);
+    }
+    .table td { 
+        padding: 16px 20px; 
+        vertical-align: middle;
+        border-bottom: 1px solid var(--slate-50); 
+    }
+    .status-pill {
+        font-size: 0.75rem;
+        font-weight: 700;
+        padding: 6px 12px;
+        border-radius: 20px;
+    }
+    .bg-soft-success { background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; }
+    .bg-soft-warning { background: #fffbeb; color: #d97706; border: 1px solid #fde68a; }
+    .bg-soft-danger { background: #fef2f2; color: #e11d48; border: 1px solid #fecdd3; }
+    .bg-soft-info { background: #f0f9ff; color: #0ea5e9; border: 1px solid #bae6fd; }
+    .btn-action { 
+        border-radius: 8px; width: 32px; height: 32px; padding: 0; 
+        display: inline-flex; align-items: center; justify-content: center; 
+    }
+</style>
+
+<div class="container-fluid pb-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="fw-bold mb-0" style="color: var(--text-heading);"><i class="fas fa-file-import text-danger mr-2"></i> Lamaran Masuk</h3>
+            <p class="text-muted small mb-0 mt-1">Pantau dan kelola semua lamaran yang masuk dari kandidat.</p>
         </div>
+        
+        <a href="{{ route('admin.applications.create') }}" class="btn btn-primary shadow-sm" style="border-radius: 20px; font-weight: 600;">
+            <i class="fas fa-plus mr-1"></i> Input Manual
+        </a>
     </div>
-    <div class="card-body table-responsive p-0">
-        <table class="table table-hover text-nowrap">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Kandidat</th>
-                    <th>Judul Lowongan</th>
-                    <th>Perusahaan</th>
-                    <th>Status</th>
-                    <th>Dilamar Pada</th>
-                    <th>Aksi</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach($applications as $application)
-                <tr>
-                    <td>{{ $application->id }}</td>
-                    <td>{{ $application->user->name }}</td>
-                    <td>{{ Str::limit($application->job->title, 20) }}</td>
-                    <td>{{ $application->job->company->company_name }}</td>
-                    <td>
-                        <span class="badge badge-{{ match($application->status) {
-                            'pending' => 'warning',
-                            'shortlisted' => 'info',
-                            'accepted' => 'success',
-                            'rejected' => 'danger',
-                            default => 'secondary'
-                        } }}">
-                            {{ match($application->status) {
-                                'pending' => 'Menunggu',
-                                'shortlisted' => 'Terpilih',
-                                'accepted' => 'Diterima',
-                                'rejected' => 'Ditolak',
-                                default => ucfirst($application->status)
-                            } }}
-                        </span>
-                    </td>
-                    <td>{{ $application->created_at->format('d M Y') }}</td>
-                    <td>
-                        <form action="{{ route('admin.applications.destroy', $application->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Apakah Anda yakin?')">
-                            @csrf
-                            @method('DELETE')
-                            <a href="{{ route('admin.applications.show', $application->id) }}" class="btn btn-sm btn-info" title="Lihat">
-                                <i class="fas fa-eye"></i>
+
+    <div class="dashboard-card">
+        <div class="card-header bg-white p-3 d-flex justify-content-between align-items-center" style="border-radius: 12px 12px 0 0; border-bottom: 1px solid var(--slate-100);">
+            <h6 class="mb-0 font-weight-bold text-dark">
+                @if(request('job_id'))
+                    Menampilkan Lamaran untuk Job Tertentu
+                @else
+                    Semua Riwayat Lamaran
+                @endif
+            </h6>
+            
+            <form action="{{ route('admin.applications.index') }}" method="GET" class="m-0 d-flex">
+                @if(request('job_id'))
+                    <input type="hidden" name="job_id" value="{{ request('job_id') }}">
+                @endif
+                <div class="input-group input-group-sm shadow-sm" style="width: 250px;">
+                    <input type="text" name="search" class="form-control border-right-0" placeholder="Cari nama pelamar..." value="{{ request('search') }}" style="border-radius: 20px 0 0 20px;">
+                    <div class="input-group-append">
+                        <button type="submit" class="btn btn-outline-secondary border-left-0" style="border-radius: 0 20px 20px 0; background: #fff;">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+        
+        <div class="card-body table-responsive p-0">
+            <table class="table table-hover text-nowrap mb-0">
+                <thead>
+                    <tr>
+                        <th class="pl-4">Kandidat</th>
+                        <th>Melamar Posisi</th>
+                        <th class="text-center">Status</th>
+                        <th class="text-center">Tes Kraepelin</th>
+                        <th>Waktu Melamar</th>
+                        <th class="text-right pr-4">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($applications as $application)
+                    <tr>
+                        <td class="pl-4">
+                            <div class="d-flex align-items-center">
+                                <img src="{{ $application->user->avatar ? asset('storage/' . $application->user->avatar) : 'https://ui-avatars.com/api/?name='.urlencode($application->user->name).'&background=f1f5f9&color=334155' }}" 
+                                     alt="Avatar" class="rounded-circle mr-3 border shadow-sm" width="42" height="42" style="object-fit: cover;">
+                                <div>
+                                    <div class="font-weight-bold text-dark" style="font-size: 0.95rem;">
+                                        {{ $application->user->name ?? 'Pelamar Dihapus' }}
+                                    </div>
+                                    <div class="text-muted small">
+                                        {{ $application->user->email ?? '-' }}
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <a href="{{ route('admin.jobs.show', $application->job_id) }}" class="text-decoration-none font-weight-bold" style="color: var(--brand-primary);">
+                                {{ Str::limit($application->job->title ?? 'Pekerjaan Dihapus', 30) }}
                             </a>
-                            <a href="{{ route('admin.applications.edit', $application->id) }}" class="btn btn-sm btn-warning" title="Ubah">
-                                <i class="fas fa-edit"></i>
-                            </a>
-                            <button type="submit" class="btn btn-sm btn-danger" title="Hapus">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </form>
-                    </td>
-                </tr>
-                @endforeach
-            </tbody>
-        </table>
-    </div>
-    <div class="card-footer clearfix">
-        {{ $applications->links() }}
+                            <div class="text-muted small">
+                                {{ $application->job->company->company_name ?? 'HerbaTech' }}
+                            </div>
+                        </td>
+                        <td class="text-center">
+                            @php
+                                $statusClass = match($application->status) {
+                                    'pending' => 'warning',
+                                    'shortlisted' => 'info',
+                                    'accepted' => 'success',
+                                    'rejected' => 'danger',
+                                    default => 'secondary'
+                                };
+                                $statusText = match($application->status) {
+                                    'pending' => 'Menunggu',
+                                    'shortlisted' => 'Dipertimbangkan',
+                                    'accepted' => 'Diterima',
+                                    'rejected' => 'Ditolak',
+                                    default => ucfirst($application->status)
+                                };
+                            @endphp
+                            <span class="status-pill bg-soft-{{ $statusClass }}">
+                                {{ $statusText }}
+                            </span>
+                        </td>
+                        <td class="text-center">
+                            @if($application->kraepelin_id)
+                                <span class="badge bg-success text-white" style="border-radius: 8px;"><i class="fas fa-check-circle mr-1"></i> Selesai</span>
+                            @else
+                                <span class="badge bg-light text-muted border" style="border-radius: 8px;">Belum Mengerjakan</span>
+                            @endif
+                        </td>
+                        <td>
+                            <div class="text-dark">{{ $application->created_at->format('d M Y') }}</div>
+                            <div class="text-muted small">{{ $application->created_at->diffForHumans() }}</div>
+                        </td>
+                        <td class="text-right pr-4">
+                            <form action="{{ route('admin.applications.destroy', $application->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus permanen data lamaran ini?')">
+                                @csrf
+                                @method('DELETE')
+                                <a href="{{ route('admin.applications.show', $application->id) }}" class="btn btn-outline-primary btn-action" title="Review Lamaran">
+                                    <i class="fas fa-search-plus"></i>
+                                </a>
+                                <a href="{{ route('admin.applications.edit', $application->id) }}" class="btn btn-outline-warning btn-action mx-1" title="Ubah Status">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <button type="submit" class="btn btn-outline-danger btn-action" title="Hapus Permanen">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="6" class="text-center py-5">
+                            <div class="text-muted">
+                                <i class="fas fa-inbox fa-3x mb-3 opacity-50"></i>
+                                <h5>Belum ada lamaran masuk</h5>
+                                <p>Saat ini belum ada kandidat yang melamar pekerjaan.</p>
+                            </div>
+                        </td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+        
+        @if($applications->hasPages())
+        <div class="card-footer bg-white border-top-0 pt-3 pb-3" style="border-radius: 0 0 12px 12px;">
+            <div class="d-flex justify-content-center">
+                {{ $applications->links() }}
+            </div>
+        </div>
+        @endif
     </div>
 </div>
 @endsection

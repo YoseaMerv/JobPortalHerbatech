@@ -36,11 +36,13 @@ class Company extends Model
         'company_size',
         'founded_date',
         'is_verified',
+        'is_active',
     ];
 
     protected $casts = [
         'founded_date' => 'date',
         'is_verified' => 'boolean',
+        'is_active' => 'boolean',
     ];
 
     // Relationships

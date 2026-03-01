@@ -12,10 +12,37 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('companies', function (Blueprint $table) {
-            $table->string('hero_title')->nullable()->after('company_profile_url');
-            $table->text('hero_description')->nullable()->after('hero_title');
-            $table->string('hero_image')->nullable()->after('hero_description');
-            $table->string('hero_cta_text')->nullable()->after('hero_image');
+            // Kita cek satu per satu agar tidak terjadi error "Duplicate Column"
+            
+            if (!Schema::hasColumn('companies', 'facebook')) {
+                $table->string('facebook')->nullable()->after('company_website');
+            }
+            if (!Schema::hasColumn('companies', 'twitter')) {
+                $table->string('twitter')->nullable()->after('facebook');
+            }
+            if (!Schema::hasColumn('companies', 'linkedin')) {
+                $table->string('linkedin')->nullable()->after('twitter');
+            }
+            if (!Schema::hasColumn('companies', 'instagram')) {
+                $table->string('instagram')->nullable()->after('linkedin');
+            }
+            if (!Schema::hasColumn('companies', 'company_profile_url')) {
+                $table->string('company_profile_url')->nullable()->after('instagram');
+            }
+
+            // Bagian Hero Section yang benar-benar belum ada
+            if (!Schema::hasColumn('companies', 'hero_title')) {
+                $table->string('hero_title')->nullable()->after('company_profile_url');
+            }
+            if (!Schema::hasColumn('companies', 'hero_description')) {
+                $table->text('hero_description')->nullable()->after('hero_title');
+            }
+            if (!Schema::hasColumn('companies', 'hero_image')) {
+                $table->string('hero_image')->nullable()->after('hero_description');
+            }
+            if (!Schema::hasColumn('companies', 'hero_cta_text')) {
+                $table->string('hero_cta_text')->nullable()->after('hero_image');
+            }
         });
     }
 
@@ -25,7 +52,11 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('companies', function (Blueprint $table) {
-            $table->dropColumn(['hero_title', 'hero_description', 'hero_image', 'hero_cta_text']);
+            $table->dropColumn([
+                'facebook', 'twitter', 'linkedin', 'instagram', 
+                'company_profile_url', 'hero_title', 'hero_description', 
+                'hero_image', 'hero_cta_text'
+            ]);
         });
     }
 };
