@@ -12,10 +12,13 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('seeker_profiles', function (Blueprint $table) {
-            // Menambahkan atau memastikan kolom yang sesuai rencana Anda
-            $table->text('summary')->nullable()->after('bio'); // Ringkasan Pribadi
-            $table->json('languages')->nullable(); // Bahasa (disimpan sebagai array/json)
-            $table->string('resume_filename')->nullable(); // Nama asli file resume
+            $table->text('summary')->nullable()->after('bio'); 
+            $table->json('languages')->nullable(); 
+            $table->string('resume_filename')->nullable();
+            
+            // Tambahan untuk Identitas Pelamar
+            $table->string('linkedin_url')->nullable();
+            $table->decimal('expected_salary', 15, 2)->nullable(); 
         });
     }
 
@@ -25,7 +28,14 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('seeker_profiles', function (Blueprint $table) {
-            //
+            // Menghapus kolom jika di-rollback
+            $table->dropColumn([
+                'summary',
+                'languages',
+                'resume_filename',
+                'linkedin_url',
+                'expected_salary'
+            ]);
         });
     }
 };

@@ -97,108 +97,137 @@
 
                 <div class="step-content d-none" id="step-2">
                     <div class="card border-0 shadow-sm rounded-4 p-4 p-lg-5">
-                        <h5 class="fw-bold mb-4">Pertanyaan Perusahaan</h5>
+                        <div class="mb-5 border-bottom pb-3">
+                            <h5 class="fw-bold mb-1">Kuesioner Pra-Seleksi</h5>
+                            <p class="text-muted small">Jawablah pertanyaan berikut dengan jujur. Jawaban Anda akan membantu HRD mengenal Anda lebih baik sebelum tahap wawancara.</p>
+                        </div>
+                        
                         <div class="row g-4">
                             <div class="col-12">
-                                <label class="form-label-custom">1. PERNYATAAN KEJUJURAN DATA</label>
-                                <p class="text-secondary small mb-2">Apakah seluruh informasi yang Anda berikan benar dan dapat dipertanggungjawabkan?</p>
+                                <label class="form-label-custom">Pertanyaan 1</label>
+                                <p class="text-dark fw-semibold mb-2">Apakah Anda menyatakan bahwa seluruh informasi profil dan dokumen yang Anda lampirkan adalah benar?</p>
                                 <select name="q1" class="form-select input-custom" required>
-                                    <option value="Ya">Ya, saya menyatakan benar</option>
+                                    <option value="" disabled selected>Pilih jawaban...</option>
+                                    <option value="Ya">Ya, saya menyatakan benar dan dapat dipertanggungjawabkan</option>
                                     <option value="Tidak">Tidak</option>
                                 </select>
                             </div>
 
                             <div class="col-md-6">
-                                <label class="form-label-custom">2. KOMITMEN FULL-TIME</label>
-                                <p class="text-secondary small mb-2">Bersedia bekerja penuh waktu di lokasi kantor?</p>
+                                <label class="form-label-custom">Pertanyaan 2</label>
+                                <p class="text-dark fw-semibold mb-2">Apakah Anda bersedia untuk bekerja penuh waktu (full-time) di kantor kami?</p>
                                 <select name="q2" class="form-select input-custom" required>
-                                    <option value="Ya">Ya</option>
-                                    <option value="Tidak">Tidak</option>
+                                    <option value="" disabled selected>Pilih jawaban...</option>
+                                    <option value="Ya">Ya, saya bersedia</option>
+                                    <option value="Tidak">Tidak, saya mencari remote/part-time</option>
                                 </select>
                             </div>
 
                             <div class="col-md-6">
-                                <label class="form-label-custom">3. DOMISILI & RELOKASI</label>
-                                <p class="text-secondary small mb-2">Bersedia relokasi mandiri jika diterima?</p>
+                                <label class="form-label-custom">Pertanyaan 3</label>
+                                <p class="text-dark fw-semibold mb-2">Jika Anda tinggal di luar kota, apakah Anda bersedia untuk melakukan relokasi secara mandiri?</p>
                                 <select name="q3" class="form-select input-custom" required>
-                                    <option value="Ya">Ya/Sudah Domisili Sama</option>
-                                    <option value="Tidak">Tidak Bersedia</option>
+                                    <option value="" disabled selected>Pilih jawaban...</option>
+                                    <option value="Ya">Ya, saya bersedia (atau sudah berdomisili sama)</option>
+                                    <option value="Tidak">Tidak bersedia</option>
                                 </select>
                             </div>
 
                             <div class="col-md-6">
-                                <label class="form-label-custom">4. KENDARAAN PRIBADI</label>
-                                <p class="text-secondary small mb-2">Memiliki kendaraan pribadi untuk mobilitas?</p>
+                                <label class="form-label-custom">Pertanyaan 4</label>
+                                <p class="text-dark fw-semibold mb-2">Apakah Anda memiliki kendaraan pribadi untuk mendukung mobilitas kerja?</p>
                                 <select name="q4" class="form-select input-custom" required>
-                                    <option value="Ya">Ya</option>
-                                    <option value="Tidak">Tidak</option>
+                                    <option value="" disabled selected>Pilih jawaban...</option>
+                                    <option value="Ya">Ya, saya memiliki kendaraan pribadi</option>
+                                    <option value="Tidak">Tidak memiliki</option>
                                 </select>
                             </div>
 
                             <div class="col-md-6">
-                                <label class="form-label-custom">5. EKSPEKTASI GAJI</label>
-                                <p class="text-secondary small mb-2">Berapa gaji bulanan yang diharapkan?</p>
-                                <input type="number" name="q5" class="form-control input-custom" placeholder="Contoh: 5000000" required>
+                                <label class="form-label-custom">Pertanyaan 5</label>
+                                <p class="text-dark fw-semibold mb-2">Berapa ekspektasi gaji bulanan (Take Home Pay) yang Anda harapkan?</p>
+                                <div class="input-group">
+                                    <span class="input-group-text border-0 bg-light" style="border-radius: 12px 0 0 12px;">Rp</span>
+                                    <input type="number" name="q5" class="form-control input-custom" style="border-radius: 0 12px 12px 0;" placeholder="Contoh: 5000000" required>
+                                </div>
                             </div>
 
                             <div class="col-md-6">
-                                <label class="form-label-custom">6. SKALA KEAHLIAN (1-10)</label>
-                                <input type="range" name="q6" class="form-range" min="1" max="10" step="1" id="q6Range" required>
-                                <div class="text-center fw-bold text-primary" id="q6Val">5</div>
-                            </div>
-
-                            <div class="col-12">
-                                <label class="form-label-custom">7. PENCAPAIAN TERBAIK</label>
-                                <textarea name="q7" class="form-control input-custom" rows="2" required placeholder="Ceritakan satu pencapaian membanggakan..."></textarea>
-                            </div>
-
-                            <div class="col-12">
-                                <label class="form-label-custom">8. KEAHLIAN UTAMA</label>
-                                <input type="text" name="q8" class="form-control input-custom" required placeholder="Sebutkan satu keahlian paling dikuasai...">
+                                <label class="form-label-custom">Pertanyaan 6</label>
+                                <p class="text-dark fw-semibold mb-2">Beri nilai (1-10) untuk tingkat keahlian teknis Anda yang paling relevan dengan posisi ini.</p>
+                                <div class="d-flex align-items-center gap-3 mt-3">
+                                    <input type="range" name="q6" class="form-range flex-grow-1" min="1" max="10" step="1" id="q6Range" value="5" required>
+                                    <div class="bg-primary text-white rounded-3 d-flex align-items-center justify-content-center shadow-sm" style="width: 45px; height: 45px; font-size: 1.2rem; font-weight: bold;" id="q6Val">5</div>
+                                </div>
                             </div>
 
                             <div class="col-md-6">
-                                <label class="form-label-custom">9. GAYA KERJA</label>
-                                <select name="q9" class="form-select input-custom" required>
-                                    <option value="Mandiri">Mandiri</option>
-                                    <option value="Kolaborasi Tim">Kolaborasi Tim</option>
-                                </select>
-                            </div>
-
-                            <div class="col-md-6">
-                                <label class="form-label-custom">10. LINGKUNGAN KERJA PRODUKTIF</label>
-                                <input type="text" name="q10" class="form-control input-custom" required placeholder="Lingkungan yang memotivasi Anda...">
-                            </div>
-
-                            <div class="col-12">
-                                <label class="form-label-custom">11. MENYIKAPI KRITIK</label>
-                                <textarea name="q11" class="form-control input-custom" rows="2" required></textarea>
-                            </div>
-
-                            <div class="col-12">
-                                <label class="form-label-custom">12. PENGALAMAN KONFLIK TIM</label>
-                                <textarea name="q12" class="form-control input-custom" rows="2" required></textarea>
-                            </div>
-
-                            <div class="col-12">
-                                <label class="form-label-custom">13. MOTIVASI MELAMAR</label>
-                                <textarea name="q13" class="form-control input-custom" rows="2" required></textarea>
-                            </div>
-
-                            <div class="col-12">
-                                <label class="form-label-custom">14. VISI 1 TAHUN KE DEPAN</label>
-                                <input type="text" name="q14" class="form-control input-custom" required>
-                            </div>
-
-                            <div class="col-md-6">
-                                <label class="form-label-custom">15. TANGGAL MULAI KERJA</label>
+                                <label class="form-label-custom">Pertanyaan 7</label>
+                                <p class="text-dark fw-semibold mb-2">Kapan tanggal tercepat Anda bisa mulai bekerja jika Anda diterima?</p>
                                 <input type="date" name="q15" class="form-control input-custom" required>
+                            </div>
+
+                            <div class="col-12 mt-5">
+                                <h6 class="fw-bold mb-3 border-bottom pb-2">Bagian II: Penilaian Karakter & Esai Singkat</h6>
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label-custom">Pertanyaan 8</label>
+                                <p class="text-dark fw-semibold mb-2">Ceritakan satu pencapaian terbesar dalam karier/pendidikan Anda sejauh ini.</p>
+                                <textarea name="q7" class="form-control input-custom" rows="3" required placeholder="Jelaskan secara singkat apa yang Anda capai dan bagaimana cara Anda meraihnya..."></textarea>
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label-custom">Pertanyaan 9</label>
+                                <p class="text-dark fw-semibold mb-2">Sebutkan satu keahlian spesifik yang membuat Anda merasa paling cocok untuk posisi ini.</p>
+                                <input type="text" name="q8" class="form-control input-custom" required placeholder="Contoh: Saya mahir menggunakan framework Laravel untuk membangun API yang cepat.">
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label-custom">Pertanyaan 10</label>
+                                <p class="text-dark fw-semibold mb-2">Bagaimana preferensi gaya kerja Anda sehari-hari?</p>
+                                <select name="q9" class="form-select input-custom" required>
+                                    <option value="" disabled selected>Pilih jawaban...</option>
+                                    <option value="Mandiri">Saya lebih produktif bekerja secara mandiri</option>
+                                    <option value="Kolaborasi Tim">Saya lebih suka berkolaborasi dalam tim</option>
+                                    <option value="Fleksibel">Saya bisa beradaptasi dengan keduanya</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label-custom">Pertanyaan 11</label>
+                                <p class="text-dark fw-semibold mb-2">Deskripsikan budaya atau lingkungan kerja yang paling memotivasi Anda.</p>
+                                <input type="text" name="q10" class="form-control input-custom" required placeholder="Contoh: Lingkungan yang terbuka, transparan, dan minim birokrasi kaku.">
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label-custom">Pertanyaan 12</label>
+                                <p class="text-dark fw-semibold mb-2">Bagaimana cara Anda menyikapi kritik atau masukan negatif dari atasan Anda?</p>
+                                <textarea name="q11" class="form-control input-custom" rows="2" required placeholder="Tuliskan jawaban Anda di sini..."></textarea>
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label-custom">Pertanyaan 13</label>
+                                <p class="text-dark fw-semibold mb-2">Ceritakan pengalaman Anda saat harus menghadapi perbedaan pendapat dalam sebuah tim.</p>
+                                <textarea name="q12" class="form-control input-custom" rows="3" required placeholder="Bagaimana situasinya dan bagaimana Anda menyelesaikannya?"></textarea>
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label-custom">Pertanyaan 14</label>
+                                <p class="text-dark fw-semibold mb-2">Mengapa Anda tertarik melamar di perusahaan kami?</p>
+                                <textarea name="q13" class="form-control input-custom" rows="2" required placeholder="Apa yang membuat Anda memilih kami dibandingkan perusahaan lain?"></textarea>
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label-custom">Pertanyaan 15</label>
+                                <p class="text-dark fw-semibold mb-2">Di mana Anda melihat diri Anda (target karier) dalam 1-3 tahun ke depan?</p>
+                                <input type="text" name="q14" class="form-control input-custom" required placeholder="Contoh: Saya ingin menjadi Senior Developer yang memimpin tim kecil.">
                             </div>
                         </div>
 
                         <div class="d-flex justify-content-between mt-5 border-top pt-4">
-                            <button type="button" class="btn btn-light px-4 rounded-3 fw-bold" onclick="nextStep(1)">Kembali</button>
-                            <button type="button" class="btn btn-primary px-5 rounded-3 fw-bold" onclick="nextStep(3)">Lanjut ke Review</button>
+                            <button type="button" class="btn btn-light px-4 rounded-3 fw-bold" onclick="nextStep(1)"><i class="fas fa-arrow-left me-2"></i> Kembali</button>
+                            <button type="button" class="btn btn-primary px-5 rounded-3 fw-bold" onclick="nextStep(3)">Lanjut ke Review <i class="fas fa-arrow-right ms-2"></i></button>
                         </div>
                     </div>
                 </div>

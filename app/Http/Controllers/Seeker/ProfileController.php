@@ -16,26 +16,26 @@ class ProfileController extends Controller
     {
         $user = Auth::user();
 
-        // 1. Pastikan profil ada
+        // Menggunakan firstOrCreate untuk memastikan hanya ada 1 profil
         $profile = SeekerProfile::firstOrCreate(
             ['user_id' => $user->id],
             ['is_public' => true]
         );
 
-        $profile->load(['experiences', 'educations', 'skills', 'certificates']);
+        // Load relasi agar tidak ada N+1 query
+        $profile->load(['experiences', 'educations', 'skills']);
 
-        // 2. Proteksi penguncian profil (Jika ada lamaran pending)
         $isLocked = $user->applications()->where('status', 'pending')->exists();
 
-        // 3. Hitung kelengkapan profil langsung dari Controller (Lebih aman)
+        // Hitung kelengkapan profil
         $points = 0;
         $totalPoints = 5;
 
-        if (!empty($user->avatar)) $points++;
-        if (!empty($profile->summary)) $points++;
-        if (!empty($profile->phone) && !empty($profile->home_location_details)) $points++; // Identitas dasar
+        if ($user->avatar) $points++;
+        if ($profile->summary) $points++;
+        if ($profile->phone && $profile->home_location_details) $points++;
         if ($profile->experiences->count() > 0 || $profile->educations->count() > 0) $points++;
-        if (!empty($profile->resume_path)) $points++;
+        if ($profile->resume_path) $points++;
 
         $completeness = ($points / $totalPoints) * 100;
 
@@ -47,42 +47,43 @@ class ProfileController extends Controller
         $user = Auth::user();
         $profile = $user->seekerProfile;
 
-        // 1. Proteksi penguncian profil
         if ($user->applications()->where('status', 'pending')->exists()) {
-            return redirect()->back()->with('error', 'Profil dikunci karena Anda memiliki lamaran aktif (Pending).');
+            return redirect()->back()->with('error', 'Profil dikunci karena Anda memiliki lamaran aktif.');
         }
 
-        // 2. Validasi (Semua nullable agar mendukung form terpisah di tiap Tab)
         $request->validate([
             'name'                  => 'nullable|string|max:255',
             'avatar'                => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
             'phone'                 => 'nullable|string|max:20',
             'home_location_details' => 'nullable|string|max:255',
-            'about'                 => 'nullable|string', // Untuk kolom summary
+            'date_of_birth'         => 'nullable|date',
+            'gender'                => 'nullable|string|in:Laki-laki,Perempuan',
+            'linkedin_url'          => 'nullable|url|max:255',
+            'expected_salary'       => 'nullable|numeric',
+            'about'                 => 'nullable|string', 
             'languages'             => 'nullable|array',
             'resume'                => 'nullable|file|mimes:pdf,doc,docx|max:5120',
         ]);
 
-        // 3. Update User (Hanya jika field dikirim dari form Identitas)
+        // --- UPDATE TABEL USERS ---
         if ($request->has('name')) {
             $user->name = $request->name;
         }
 
         if ($request->hasFile('avatar')) {
-            if ($user->avatar && Storage::disk('public')->exists($user->avatar)) {
+            if ($user->avatar) {
                 Storage::disk('public')->delete($user->avatar);
             }
             $user->avatar = $request->file('avatar')->store('avatars', 'public');
         }
         
-        // Simpan perubahan User jika ada
         if ($user->isDirty()) {
             $user->save();
         }
 
-        // 4. Update Resume (Hanya jika dikirim dari form Resume)
+        // --- UPDATE FILE RESUME ---
         if ($request->hasFile('resume')) {
-            if ($profile->resume_path && Storage::disk('public')->exists($profile->resume_path)) {
+            if ($profile->resume_path) {
                 Storage::disk('public')->delete($profile->resume_path);
             }
             $file = $request->file('resume');
@@ -90,26 +91,30 @@ class ProfileController extends Controller
             $profile->resume_filename = $file->getClientOriginalName();
         }
 
-        // 5. Update SeekerProfile (Deteksi field apa saja yang dikirim oleh form)
-        // Kita menggunakan $request->has() untuk memastikan form mana yang sedang di-submit
+        // --- UPDATE TABEL SEEKER PROFILES ---
+        // Identitas Dasar
+        if ($request->has('phone')) $profile->phone = $request->phone;
+        if ($request->has('home_location_details')) $profile->home_location_details = $request->home_location_details;
+        if ($request->has('date_of_birth')) $profile->birth_date = $request->date_of_birth;
+        if ($request->has('linkedin_url')) $profile->linkedin_url = $request->linkedin_url;
+        if ($request->has('expected_salary')) $profile->expected_salary = $request->expected_salary;
         
-        // Jika form Identitas yang disubmit
-        if ($request->has('phone')) {
-            $profile->phone = $request->phone;
-        }
-        if ($request->has('home_location_details')) {
-            $profile->home_location_details = $request->home_location_details;
+        // Mapping Gender ke Database Enum
+        if ($request->has('gender')) {
+            $genderMap = ['Laki-laki' => 'male', 'Perempuan' => 'female'];
+            $profile->gender = $genderMap[$request->gender] ?? null;
         }
 
-        // Jika form Profesional (Bio & Bahasa) yang disubmit
+        // Bio & Skill
         if ($request->has('about')) {
             $profile->summary = $request->about;
         }
-        if ($request->has('languages')) {
-            $profile->languages = $request->languages ?? []; // Kosongkan jika uncheck semua
+        
+        // Penting: Kosongkan array jika tidak ada bahasa yang dicentang
+        if ($request->has('about') || $request->has('languages')) {
+            $profile->languages = $request->languages ?? [];
         }
 
-        // Simpan perubahan Profil jika ada
         if ($profile->isDirty()) {
             $profile->save();
         }
@@ -138,9 +143,7 @@ class ProfileController extends Controller
             'description' => 'nullable|string',
         ]);
 
-        $profile = SeekerProfile::firstOrCreate(['user_id' => Auth::id()]);
-        $profile->experiences()->create($validated);
-
+        Auth::user()->seekerProfile->experiences()->create($validated);
         return back()->with('success', 'Riwayat karier berhasil ditambahkan!');
     }
 
@@ -154,27 +157,29 @@ class ProfileController extends Controller
             'end_date' => 'nullable|date|after_or_equal:start_date',
         ]);
 
-        $profile = SeekerProfile::firstOrCreate(['user_id' => Auth::id()]);
-        $profile->educations()->create($validated);
-
+        Auth::user()->seekerProfile->educations()->create($validated);
         return back()->with('success', 'Riwayat pendidikan berhasil ditambahkan!');
     }
 
     public function destroyExperience(Experience $experience)
     {
-        if ($experience->seeker_profile_id !== auth()->user()->seekerProfile->id) {
-            abort(403);
-        }
+        $this->authorizeOwner($experience->seeker_profile_id);
         $experience->delete();
         return back()->with('success', 'Riwayat karier berhasil dihapus.');
     }
 
     public function destroyEducation(Education $education)
     {
-        if ($education->seeker_profile_id !== auth()->user()->seekerProfile->id) {
-            abort(403);
-        }
+        $this->authorizeOwner($education->seeker_profile_id);
         $education->delete();
         return back()->with('success', 'Riwayat pendidikan berhasil dihapus.');
+    }
+
+    // Helper method untuk cek kepemilikan data
+    private function authorizeOwner($profileId)
+    {
+        if ($profileId !== Auth::user()->seekerProfile->id) {
+            abort(403, 'Aksi tidak diizinkan.');
+        }
     }
 }

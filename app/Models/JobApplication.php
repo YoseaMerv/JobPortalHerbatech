@@ -20,18 +20,20 @@ class JobApplication extends Model
     const STATUS_ACCEPTED = 'accepted';
     const STATUS_REJECTED = 'rejected';
     
-
     protected $fillable = [
         'job_id',
         'user_id',
         'cv_path',
+        'birth_date',
         'cover_letter_path',
         'status',
         'notes',
+        'answers', 
     ];
 
     protected $casts = [
         'applied_at' => 'datetime',
+        'answers' => 'array',
     ];
 
     public static function getAllStatuses(): array
@@ -53,6 +55,7 @@ class JobApplication extends Model
 
     public function kraepelinTest()
     {
+        // Menggunakan latestOfMany() sudah sangat tepat untuk retake test
         return $this->hasOne(KraepelinTest::class)->latestOfMany();
     }
 
@@ -67,6 +70,8 @@ class JobApplication extends Model
     }
 
     // --- ACCESSORS (UI Logic) ---
+    
+    // Menambahkan Label Status agar bisa dipanggil di Blade via $application->status_label
     public function getStatusLabelAttribute(): string
     {
         return self::getAllStatuses()[$this->status] ?? ucfirst($this->status);
@@ -95,6 +100,7 @@ class JobApplication extends Model
             self::STATUS_REVIEWED         => 'fa-eye',
             self::STATUS_SHORTLISTED      => 'fa-user-check',
             self::STATUS_TEST_INVITED     => 'fa-file-signature',
+            self::STATUS_TEST_IN_PROGRESS => 'fa-spinner fa-spin',
             self::STATUS_TEST_COMPLETED   => 'fa-poll-h',
             self::STATUS_INTERVIEW        => 'fa-comments',
             self::STATUS_ACCEPTED         => 'fa-check-double',

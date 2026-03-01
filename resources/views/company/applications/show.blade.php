@@ -70,7 +70,6 @@
     .info-label { font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }
     .info-value { font-size: 0.95rem; font-weight: 600; color: var(--text-heading); }
 
-    /* Kraepelin Dashboard Enhanced */
     .kraepelin-card {
         border-radius: 16px;
         padding: 24px;
@@ -90,7 +89,6 @@
         border-left: 4px solid var(--brand-indigo);
     }
 
-    /* Cover Letter Preview Styling */
     .cv-preview-container {
         border-radius: 12px;
         overflow: hidden;
@@ -117,8 +115,9 @@
     <div class="col-lg-4">
         <div class="card review-card mb-4 overflow-hidden">
             <div class="profile-header-card text-center text-white">
-                <img src="https://ui-avatars.com/api/?name={{ urlencode($application->user->name) }}&background=fff&color=4338ca" 
+                <img src="{{ $application->user->avatar ? asset('storage/' . $application->user->avatar) : 'https://ui-avatars.com/api/?name='.urlencode($application->user->name).'&background=fff&color=4338ca' }}" 
                      class="rounded-circle border border-4 border-white border-opacity-25 mb-3 shadow-sm" 
+                     style="aspect-ratio: 1/1; object-fit: cover;"
                      width="90" alt="Candidate">
                 <h5 class="fw-bold mb-1">{{ $application->user->name }}</h5>
                 <p class="small opacity-75 mb-0">{{ $application->user->email }}</p>
@@ -176,6 +175,9 @@
                     <li class="nav-item">
                         <button class="nav-link" id="profile-tab" data-bs-toggle="tab" data-bs-target="#profile" type="button">Detail Profil</button>
                     </li>
+                    <li class="nav-item">
+                        <button class="nav-link" id="kuesioner-tab" data-bs-toggle="tab" data-bs-target="#kuesioner" type="button">Kuesioner</button>
+                    </li>
                     <li class="nav-item {{ $application->status !== 'interview' ? 'd-none' : '' }}" id="interview-tab-nav">
                         <button class="nav-link text-danger fw-bold" id="interview-tab" data-bs-toggle="tab" data-bs-target="#interview-pane" type="button">
                             <i class="fas fa-calendar-check me-1"></i> Detail Wawancara
@@ -190,9 +192,11 @@
                     @endif
                 </ul>
             </div>
+            
             <div class="card-body p-4">
                 <div class="tab-content" id="reviewTabsContent">
                     
+                    {{-- TAB 1: SURAT LAMARAN --}}
                     <div class="tab-pane fade show active" id="cover" role="tabpanel">
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <h6 class="fw-bold mb-0" style="color: var(--text-heading);">Dokumen Surat Lamaran</h6>
@@ -225,11 +229,108 @@
                         @endif
                     </div>
 
+                    {{-- TAB 2: DETAIL PROFIL --}}
+                    <div class="tab-pane fade" id="profile" role="tabpanel">
+                        @if($application->user->seekerProfile)
+                            <div class="mb-5">
+                                <h6 class="fw-bold mb-3" style="color: var(--text-heading);">Biografi / Ringkasan</h6>
+                                <p class="text-muted" style="line-height: 1.6;">{{ $application->user->seekerProfile->summary ?? 'Belum ada biografi.' }}</p>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6 class="fw-bold mb-4" style="color: var(--text-heading);">Pengalaman Kerja</h6>
+                                    @forelse($application->user->seekerProfile->experiences as $exp)
+                                        <div class="timeline-item">
+                                            <div class="fw-bold text-dark">{{ $exp->job_title }}</div>
+                                            <div class="small fw-medium text-muted">{{ $exp->company_name }}</div>
+                                            <div class="extra-small text-muted">{{ $exp->start_date->format('M Y') }} - {{ $exp->end_date ? $exp->end_date->format('M Y') : 'Sekarang' }}</div>
+                                        </div>
+                                    @empty
+                                        <p class="small text-muted">Tidak ada pengalaman.</p>
+                                    @endforelse
+                                </div>
+                                <div class="col-md-6">
+                                    <h6 class="fw-bold mb-4" style="color: var(--text-heading);">Pendidikan</h6>
+                                    @forelse($application->user->seekerProfile->educations as $edu)
+                                        <div class="timeline-item">
+                                            <div class="fw-bold text-dark">{{ $edu->degree }}</div>
+                                            <div class="small fw-medium text-muted">{{ $edu->institution }}</div>
+                                            <div class="extra-small text-muted">{{ $edu->start_date->format('Y') }} - {{ $edu->end_date ? $edu->end_date->format('Y') : 'Sekarang' }}</div>
+                                        </div>
+                                    @empty
+                                        <p class="small text-muted">Tidak ada pendidikan.</p>
+                                    @endforelse
+                                </div>
+                            </div>
+                        @endif
+                    </div>
+
+                    {{-- TAB 3: KUESIONER PRA-SELEKSI --}}
+                    <div class="tab-pane fade" id="kuesioner" role="tabpanel">
+                        <div class="mb-4">
+                            <h6 class="fw-bold mb-1" style="color: var(--text-heading);">Jawaban Kuesioner Pra-Seleksi</h6>
+                            <p class="small text-muted">Hasil kuesioner yang diisi kandidat saat proses melamar.</p>
+                        </div>
+
+                        @php
+                            $answers = $application->answers;
+                            $questions = [
+                                'q1' => 'Pernyataan Kejujuran Data',
+                                'q2' => 'Ketersediaan Kerja Full-Time',
+                                'q3' => 'Kesediaan Relokasi Mandiri',
+                                'q4' => 'Kepemilikan Kendaraan Pribadi',
+                                'q5' => 'Ekspektasi Gaji Bulanan',
+                                'q6' => 'Tingkat Keahlian Teknis (1-10)',
+                                'q15' => 'Tanggal Tercepat Mulai Kerja',
+                                'q7' => 'Pencapaian Terbesar',
+                                'q8' => 'Keahlian Utama',
+                                'q9' => 'Preferensi Gaya Kerja',
+                                'q10' => 'Lingkungan Kerja Produktif',
+                                'q11' => 'Cara Menyikapi Kritik',
+                                'q12' => 'Pengalaman Konflik Tim',
+                                'q13' => 'Motivasi Melamar',
+                                'q14' => 'Visi Karier 1-3 Tahun Ke Depan',
+                            ];
+                        @endphp
+
+                        @if($answers && count($answers) > 0)
+                            <div class="row g-3">
+                                @foreach($questions as $key => $label)
+                                    @if(isset($answers[$key]))
+                                        <div class="{{ in_array($key, ['q7', 'q11', 'q12', 'q13', 'q14']) ? 'col-12' : 'col-md-6' }}">
+                                            <div class="p-3 border rounded-3 bg-white shadow-sm h-100">
+                                                <div class="info-label mb-1" style="font-size: 0.7rem; color: #64748b;">{{ $label }}</div>
+                                                <div class="info-value text-dark" style="white-space: pre-line; line-height: 1.5;">
+                                                    @if($key === 'q5')
+                                                        Rp {{ number_format($answers[$key], 0, ',', '.') }}
+                                                    @elseif($key === 'q15')
+                                                        {{ \Carbon\Carbon::parse($answers[$key])->translatedFormat('d F Y') }}
+                                                    @elseif($key === 'q6')
+                                                        <span class="badge bg-primary rounded-pill px-3">{{ $answers[$key] }} / 10</span>
+                                                    @else
+                                                        {{ $answers[$key] }}
+                                                    @endif
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endif
+                                @endforeach
+                            </div>
+                        @else
+                            <div class="text-center py-5 border rounded-4 bg-light" style="border-style: dashed !important;">
+                                <i class="fas fa-clipboard-list fa-3x text-muted opacity-25 mb-3"></i>
+                                <h6 class="fw-bold text-muted">Data Kosong</h6>
+                                <p class="text-muted mb-0">Kandidat tidak mengisi kuesioner atau data gagal tersimpan.</p>
+                            </div>
+                        @endif
+                    </div>
+
+                    {{-- TAB 4: WAWANCARA --}}
                     <div class="tab-pane fade" id="interview-pane" role="tabpanel">
                         <div class="d-flex justify-content-between align-items-start mb-4">
                             <div>
-                                <h6 class="fw-bold mb-1" style="color: var(--text-heading);">Jadwal Wawancara Terdaftar</h6>
-                                <p class="small text-muted">Detail ini ditampilkan pada dashboard pelamar.</p>
+                                <h6 class="fw-bold mb-1" style="color: var(--text-heading);">Jadwal Wawancara</h6>
+                                <p class="small text-muted">Informasi yang dikirimkan ke dashboard pelamar.</p>
                             </div>
                             <button class="btn btn-sm btn-outline-primary fw-bold px-3" onclick="editInterview()" style="border-radius: 8px;">
                                 <i class="fas fa-edit me-1"></i> Edit Jadwal
@@ -243,48 +344,13 @@
                         </div>
                     </div>
 
-                    <div class="tab-pane fade" id="profile" role="tabpanel">
-                        @if($application->user->seekerProfile)
-                            <div class="mb-5">
-                                <h6 class="fw-bold mb-3" style="color: var(--text-heading);">Biografi Ringkas</h6>
-                                <p class="text-muted" style="line-height: 1.6;">{{ $application->user->seekerProfile->bio ?? 'Belum ada biografi.' }}</p>
-                            </div>
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <h6 class="fw-bold mb-4" style="color: var(--text-heading);">Pengalaman Kerja</h6>
-                                    @forelse($application->user->seekerProfile->experiences as $exp)
-                                        <div class="timeline-item">
-                                            <div class="fw-bold text-dark">{{ $exp->job_title }}</div>
-                                            <div class="small fw-medium text-muted">{{ $exp->company_name }}</div>
-                                        </div>
-                                    @empty
-                                        <p class="small text-muted">Tidak ada pengalaman.</p>
-                                    @endforelse
-                                </div>
-                                <div class="col-md-6">
-                                    <h6 class="fw-bold mb-4" style="color: var(--text-heading);">Pendidikan</h6>
-                                    @forelse($application->user->seekerProfile->educations as $edu)
-                                        <div class="timeline-item">
-                                            <div class="fw-bold text-dark">{{ $edu->degree }}</div>
-                                            <div class="small fw-medium text-muted">{{ $edu->institution }}</div>
-                                        </div>
-                                    @empty
-                                        <p class="small text-muted">Tidak ada pendidikan.</p>
-                                    @endforelse
-                                </div>
-                            </div>
-                        @endif
-                    </div>
-
+                    {{-- TAB 5: KRAEPELIN --}}
                     @if($application->kraepelinTest && $application->kraepelinTest->completed_at)
                     <div class="tab-pane fade" id="kraepelin" role="tabpanel">
                         @php
                             $test = $application->kraepelinTest;
                             $total = $test->total_answered ?: 1;
                             $accuracy = round(($test->total_correct / $total) * 100, 1);
-                            $panker = $total;
-                            $correct = $test->total_correct;
-                            $ganker = round((1 - (($total - $correct) / $total)) * 100, 1);
                         @endphp
 
                         <div class="d-flex justify-content-between align-items-center mb-4">
@@ -295,66 +361,37 @@
                         </div>
 
                         <div class="row g-4 mb-5">
-                            <div class="col-md-6 col-xl-3">
-                                <div class="kraepelin-card shadow-sm border-bottom border-4 border-primary">
+                            <div class="col-md-4">
+                                <div class="kraepelin-card shadow-sm border-bottom border-4 border-primary text-center">
                                     <div class="metric-label-sm text-primary mb-2">PANKER (Kecepatan)</div>
-                                    <div class="metric-value-lg text-dark">{{ $panker }}</div>
-                                    <div class="small text-muted mt-2">Total input data</div>
+                                    <div class="metric-value-lg text-dark">{{ $test->total_answered }}</div>
                                 </div>
                             </div>
-                            <div class="col-md-6 col-xl-3">
-                                <div class="kraepelin-card shadow-sm border-bottom border-4 border-success">
+                            <div class="col-md-4">
+                                <div class="kraepelin-card shadow-sm border-bottom border-4 border-success text-center">
                                     <div class="metric-label-sm text-success mb-2">TIANKER (Ketelitian)</div>
-                                    <div class="metric-value-lg text-dark">{{ $correct }}</div>
-                                    <div class="small text-muted mt-2">Jawaban benar</div>
+                                    <div class="metric-value-lg text-dark">{{ $test->total_correct }}</div>
                                 </div>
                             </div>
-                            <div class="col-md-6 col-xl-3">
-                                <div class="kraepelin-card shadow-sm border-bottom border-4 border-warning">
+                            <div class="col-md-4">
+                                <div class="kraepelin-card shadow-sm border-bottom border-4 border-warning text-center">
                                     <div class="metric-label-sm text-warning mb-2">JANKER (Ketahanan)</div>
                                     <div class="metric-value-lg text-dark">{{ $accuracy }}%</div>
-                                    <div class="small text-muted mt-2">Akurasi performa</div>
-                                </div>
-                            </div>
-                            <div class="col-md-6 col-xl-3">
-                                <div class="kraepelin-card shadow-sm border-bottom border-4 border-info">
-                                    <div class="metric-label-sm text-info mb-2">GANKER (Stabilitas)</div>
-                                    <div class="metric-value-lg text-dark">{{ $ganker }}%</div>
-                                    <div class="small text-muted mt-2">Konsistensi ritme</div>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="row g-4">
-                            <div class="col-md-6">
-                                <h6 class="fw-bold mb-3">Grafik Indikator Performa</h6>
-                                <div class="mb-3">
-                                    <div class="d-flex justify-content-between small mb-1">
-                                        <span>Energi Kerja</span>
-                                        <span class="fw-bold">{{ $panker > 1000 ? 'Sangat Tinggi' : 'Normal' }}</span>
-                                    </div>
-                                    <div class="progress-kraepelin"><div class="progress-bar bg-primary" style="width: {{ min(($panker/1500)*100, 100) }}%"></div></div>
-                                </div>
-                                <div class="mb-3">
-                                    <div class="d-flex justify-content-between small mb-1">
-                                        <span>Pengendalian Diri</span>
-                                        <span class="fw-bold">{{ $accuracy > 90 ? 'Baik' : 'Cukup' }}</span>
-                                    </div>
-                                    <div class="progress-kraepelin"><div class="progress-bar bg-success" style="width: {{ $accuracy }}%"></div></div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="analysis-section h-100">
-                                    <h6 class="fw-bold mb-3 text-primary">Interpretasi Psikologis</h6>
-                                    <p class="small text-muted mb-0" style="line-height: 1.7;">
-                                        @if($accuracy >= 85 && $panker >= 800)
-                                            Kandidat memiliki kapasitas kerja prima dengan fokus tajam. Mampu menangani tugas repetitif secara konsisten.
-                                        @else
-                                            Kandidat menunjukkan fluktuasi fokus. Disarankan untuk peran dengan ritme kerja yang dinamis namun tidak monoton.
-                                        @endif
-                                    </p>
-                                </div>
-                            </div>
+                        <div class="analysis-section">
+                            <h6 class="fw-bold mb-2 text-primary">Interpretasi Psikologis</h6>
+                            <p class="small text-muted mb-0">
+                                @if($accuracy >= 90)
+                                    Kandidat memiliki ketelitian dan fokus yang sangat baik dalam mengerjakan tugas repetitif.
+                                @elseif($accuracy >= 75)
+                                    Kandidat memiliki stabilitas kerja yang cukup baik namun perlu pengawasan pada detail kecil.
+                                @else
+                                    Kandidat cenderung kehilangan fokus pada tekanan kerja yang monoton dalam durasi lama.
+                                @endif
+                            </p>
                         </div>
                     </div>
                     @endif
@@ -364,6 +401,7 @@
     </div>
 </div>
 
+{{-- MODAL WAWANCARA --}}
 <div class="modal fade" id="interviewModal" data-bs-backdrop="static" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
@@ -418,7 +456,11 @@
             const data = parseNotes(rawNotes);
             document.getElementById('int_type').value = data.tipe || 'Online';
             document.getElementById('int_location').value = data.lokasi || '';
-            if (data.waktu) document.getElementById('int_schedule').value = data.waktu.trim().replace(' ', 'T');
+            if (data.waktu) {
+                // Konversi format waktu untuk input datetime-local
+                const parts = data.waktu.split(' ');
+                if(parts.length >= 2) document.getElementById('int_schedule').value = `${parts[0]}T${parts[1].substring(0,5)}`;
+            }
         }
         interviewModal.show();
     }
@@ -443,7 +485,7 @@
         const type = document.getElementById('int_type').value;
         const loc = document.getElementById('int_location').value;
         const time = document.getElementById('int_schedule').value;
-        if(!loc || !time) return alert('Lengkapi data!');
+        if(!loc || !time) return alert('Lengkapi data lokasi dan waktu!');
         const notes = `Tipe: ${type}\nLokasi: ${loc}\nWaktu: ${time.replace('T', ' ')}`;
         submitStatusUpdate(currentAppId, 'interview', notes);
         interviewModal.hide();
@@ -453,6 +495,7 @@
         const spinner = document.getElementById('status-spinner');
         const selector = document.getElementById('status-selector');
         const tabNav = document.getElementById('interview-tab-nav');
+        
         spinner.classList.remove('d-none');
         selector.disabled = true;
 
@@ -463,12 +506,21 @@
                 if (status === 'interview') {
                     tabNav.classList.remove('d-none');
                     if(notes) document.getElementById('text-notes-display').innerText = notes;
-                } else { tabNav.classList.add('d-none'); }
-                alert('Berhasil diperbarui');
+                } else { 
+                    tabNav.classList.add('d-none'); 
+                }
+                alert('Status berhasil diperbarui');
             }
         })
-        .catch(() => { alert('Gagal memperbarui'); selector.value = oldStatus; })
-        .finally(() => { spinner.classList.add('d-none'); selector.disabled = false; });
+        .catch(err => { 
+            console.error(err);
+            alert('Gagal memperbarui status'); 
+            selector.value = oldStatus; 
+        })
+        .finally(() => { 
+            spinner.classList.add('d-none'); 
+            selector.disabled = false; 
+        });
     }
 </script>
 @endpush

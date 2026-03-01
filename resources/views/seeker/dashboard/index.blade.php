@@ -139,32 +139,34 @@
 
     {{-- SIDEBAR KANAN --}}
     <div class="col-md-4">
+        {{-- Widget hanya muncul jika skor di bawah 100 --}}
+        @if($data['profileScore'] < 100)
         <div class="card border-0 shadow-sm mb-4 overflow-hidden" style="border-radius: 16px;">
             <div class="card-body p-4">
                 <div class="d-flex align-items-center mb-3">
                     <div class="flex-grow-1">
                         <h6 class="fw-bold text-dark mb-1">Skor Profil Anda</h6>
-                        <p class="small text-muted mb-0">
-                            {{ $data['profileScore'] < 100 ? 'Lengkapi untuk dilirik HR' : 'Profil Anda sudah luar biasa!' }}
-                        </p>
+                        <p class="small text-muted mb-0">Lengkapi untuk dilirik HR</p>
                     </div>
                     <div class="fw-bold h4 text-primary mb-0">{{ $data['profileScore'] }}%</div>
                 </div>
                 <div class="progress mb-4" style="height: 8px; border-radius: 10px; background-color: #f1f5f9;">
-                    <div class="progress-bar progress-bar-striped progress-bar-animated bg-{{ $data['profileScore'] == 100 ? 'success' : 'primary' }}"
+                    <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary"
                         role="progressbar"
                         style="width: {{ $data['profileScore'] }}%;"
                         aria-valuenow="{{ $data['profileScore'] }}"
                         aria-valuemin="0"
                         aria-valuemax="100"></div>
                 </div>
-                <a href="{{ route('seeker.profile.edit') }}" class="btn {{ $data['profileScore'] < 100 ? 'btn-outline-primary' : 'btn-success' }} w-100 fw-bold py-2 rounded-pill shadow-sm">
-                    <i class="fas {{ $data['profileScore'] < 100 ? 'fa-user-edit' : 'fa-check-circle' }} me-2"></i>
-                    {{ $data['profileScore'] < 100 ? 'Update Profil Digital' : 'Profil Lengkap' }}
+                <a href="{{ route('seeker.profile.edit') }}" class="btn btn-outline-primary w-100 fw-bold py-2 rounded-pill shadow-sm">
+                    <i class="fas fa-user-edit me-2"></i>
+                    Update Profil Digital
                 </a>
             </div>
         </div>
+        @endif
 
+        {{-- Kartu Rekomendasi Kerja --}}
         <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px;">
             <div class="card-header bg-white py-3 border-bottom">
                 <h6 class="mb-0 fw-bold text-dark"><i class="fas fa-star me-2 text-warning"></i>Rekomendasi Kerja</h6>
@@ -188,7 +190,6 @@
             </div>
         </div>
     </div>
-</div>
 
 <style>
     .alert-indigo {
