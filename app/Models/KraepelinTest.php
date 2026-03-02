@@ -9,55 +9,79 @@ class KraepelinTest extends Model
 {
     use HasFactory;
 
-    /**
-     * Atribut yang dapat diisi (mass assignable).
-     */
     protected $fillable = [
         'job_application_id',
         'questions',
         'answers',
+        'results_chart',
         'total_answered',
         'total_correct',
         'total_wrong',
+        'panker',
+        'tianker',
+        'janker',
+        'ganker',
         'stability_score',
         'started_at',
         'completed_at',
     ];
 
-    /**
-     * Casting atribut untuk memastikan tipe data yang tepat saat diakses.
-     */
     protected $casts = [
-        'questions'    => 'array',    // Otomatis konversi JSON ke Array
-        'answers'      => 'array',    // Otomatis konversi JSON ke Array
-        'started_at'   => 'datetime',
-        'completed_at' => 'datetime',
+        'questions'     => 'array',
+        'answers'       => 'array',
+        'results_chart' => 'array',
+        'started_at'    => 'datetime',
+        'completed_at'  => 'datetime',
+        'panker'        => 'float',
+        'tianker'       => 'integer',
+        'janker'        => 'float',
+        'ganker'        => 'float',
     ];
 
-    /**
-     * Relasi Balik ke Lamaran Pekerjaan (Job Application).
-     */
+    protected $hidden = [
+        'questions',
+        'answers',
+    ];
+
     public function jobApplication()
     {
         return $this->belongsTo(JobApplication::class);
     }
 
     /**
-     * Helper untuk mengecek apakah tes sudah selesai.
+     * Ambil persentase akurasi: $test->accuracy_percentage
      */
-    public function isCompleted(): bool
+    public function getAccuracyPercentageAttribute()
     {
-        return !is_null($this->completed_at);
+        return $this->total_answered > 0 
+            ? round(($this->total_correct / $this->total_answered) * 100, 1) 
+            : 0;
     }
 
     /**
-     * Helper untuk mendapatkan durasi pengerjaan dalam menit.
+     * Label Kecepatan: $test->panker_label
      */
-    public function getDurationInMinutesAttribute()
+    public function getPankerLabelAttribute()
     {
-        if ($this->started_at && $this->completed_at) {
-            return $this->started_at->diffInMinutes($this->completed_at);
-        }
-        return 0;
+        if ($this->panker >= 15) return 'Sangat Cepat';
+        if ($this->panker >= 10) return 'Cepat';
+        return 'Normal/Lambat';
+    }
+
+    public function getTiankerLabelAttribute()
+    {
+        if ($this->tianker <= 5) return 'Sangat Teliti';
+        if ($this->tianker <= 12) return 'Teliti';
+        return 'Kurang Teliti';
+    }
+
+    public function getGankerLabelAttribute()
+    {
+        return $this->ganker >= 0 ? 'Daya Tahan Kuat' : 'Mudah Lelah';
+    }
+
+    public function isCompleted(): bool
+    {
+        return !is_null($this->completed_at);
     }
 }

@@ -152,6 +152,7 @@ Route::prefix('seeker')->name('seeker.')->middleware(['auth', 'verified', 'role:
         Route::get('/{application}/start', [KraepelinController::class, 'startTest'])->name('start');
         Route::post('/{testId}/submit', [KraepelinController::class, 'submitTest'])->name('submit');
         Route::get('/{application}/completed', [KraepelinController::class, 'showCompleted'])->name('completed');
+        Route::get('kraepelin-test/{application}/completed', [KraepelinController::class, 'showCompleted'])->name('seeker.kraepelin.completed');
     });
 
 });

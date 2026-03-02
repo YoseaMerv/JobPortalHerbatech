@@ -7,58 +7,52 @@ use App\Models\JobApplication;
 use App\Models\KraepelinTest;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class KraepelinController extends Controller
 {
     /**
-     * Menampilkan instruksi tes untuk kandidat.
+     * Menampilkan instruksi tes.
      */
     public function showInstructions($applicationId)
     {
         $application = JobApplication::with('job.company')->findOrFail($applicationId);
 
-        // Cek apakah status mengizinkan akses (Invited atau In Progress)
+        // Proteksi Akses
         if (!in_array($application->status, [JobApplication::STATUS_TEST_INVITED, JobApplication::STATUS_TEST_IN_PROGRESS])) {
-            return redirect()->route('seeker.dashboard')->with('error', 'Akses tes ditolak atau Anda sudah menyelesaikan tes.');
+            return redirect()->route('seeker.dashboard')->with('error', 'Akses tes ditolak atau sudah selesai.');
         }
 
         return view('seeker.kraepelin.instructions', compact('application'));
     }
 
     /**
-     * Memulai tes dan generate angka acak.
+     * Inisialisasi Tes & Generate Soal.
      */
     public function startTest($applicationId)
     {
         $application = JobApplication::where('id', $applicationId)
-            ->where('user_id', auth()->id())
+            ->where('user_id', Auth::id())
             ->firstOrFail();
 
-        $allowedStatuses = [
-            JobApplication::STATUS_TEST_INVITED,
-            JobApplication::STATUS_TEST_IN_PROGRESS
-        ];
-
-        if (!in_array($application->status, $allowedStatuses)) {
-            return redirect()->route('seeker.dashboard')
-                ->with('error', 'Tes tidak tersedia atau sudah diselesaikan.');
+        // Hanya izinkan jika status mengundang tes
+        if (!in_array($application->status, [JobApplication::STATUS_TEST_INVITED, JobApplication::STATUS_TEST_IN_PROGRESS])) {
+            return redirect()->route('seeker.dashboard')->with('error', 'Tes tidak tersedia.');
         }
 
-        // 1. Cari apakah ada tes yang SEDANG BERLANGSUNG
         $test = KraepelinTest::where('job_application_id', $application->id)
             ->whereNull('completed_at')
             ->first();
 
-        // JIKA TIDAK ADA TES YANG SEDANG BERLANGSUNG
         if (!$test) {
-            // Jika pelamar disuruh mengulang, hapus hasil tes yang lama
-            KraepelinTest::where('job_application_id', $application->id)
-                ->whereNotNull('completed_at')
-                ->delete();
-                
+            // Reset tes lama jika ada kebocoran data
+            KraepelinTest::where('job_application_id', $application->id)->delete();
+            
             $application->update(['status' => JobApplication::STATUS_TEST_IN_PROGRESS]);
 
-            // Generate Soal Baru (50 Kolom x 40 Baris)
+            // Generate 50 Kolom x 40 Baris (Standar Industri)
             $generatedQuestions = [];
             for ($i = 0; $i < 50; $i++) {
                 $column = [];
@@ -68,7 +62,6 @@ class KraepelinController extends Controller
                 $generatedQuestions[] = $column;
             }
 
-            // Simpan sesi baru ke database
             $test = KraepelinTest::create([
                 'job_application_id' => $application->id,
                 'questions' => $generatedQuestions,
@@ -80,101 +73,158 @@ class KraepelinController extends Controller
     }
 
     /**
-     * Menyimpan hasil jawaban dan menghitung skor.
+     * Submit Jawaban & Analisis Psikometri Otomatis.
      */
     public function submitTest(Request $request, $testId)
     {
+        DB::beginTransaction();
         try {
             $test = KraepelinTest::findOrFail($testId);
-            $answers = $request->input('answers', []);
+
+            // 1. Parsing Input
+            $userAnswers = $request->input('answers', []);
+            if (is_string($userAnswers)) {
+                $userAnswers = json_decode($userAnswers, true);
+            }
+
+            // Gunakan data dari model (pastikan casting array di model aktif)
             $questions = $test->questions;
 
+            $resultsPerColumn = [];
             $totalCorrect = 0;
-            $totalAnswered = count($answers);
+            $totalError = 0;
+            $totalSkipped = 0;
 
-            // Logika hitung skor otomatis
-            foreach ($answers as $key => $userAnswer) {
-                [$col, $row] = explode('-', $key);
-                $col = (int) $col;
-                $row = (int) $row;
+            // 2. Analisis per Kolom
+            foreach ($questions as $colIndex => $column) {
+                $maxRowFilled = -1;
 
-                // PERBAIKAN: Kraepelin dijumlahkan dari bawah ke atas. 
-                // Karena index 0 di bawah (saat render view), maka baris di atasnya adalah $row - 1
-                if (isset($questions[$col][$row]) && isset($questions[$col][$row - 1])) {
-                    $num1 = $questions[$col][$row];
-                    $num2 = $questions[$col][$row - 1]; // Menggunakan - 1 bukan + 1
-                    $correctSum = ($num1 + $num2) % 10;
-
-                    if ((int)$userAnswer === $correctSum) {
-                        $totalCorrect++;
+                // Cari baris tertinggi yang diisi (Cek 39 celah)
+                for ($r = count($column) - 2; $r >= 0; $r--) {
+                    $key = "{$colIndex}-{$r}";
+                    if (isset($userAnswers[$key]) && $userAnswers[$key] !== "") {
+                        $maxRowFilled = $r;
+                        break; 
                     }
+                }
+
+                if ($maxRowFilled !== -1) {
+                    for ($r = 0; $r <= $maxRowFilled; $r++) {
+                        $key = "{$colIndex}-{$r}";
+                        $correctSum = ($column[$r] + $column[$r + 1]) % 10;
+
+                        if (!isset($userAnswers[$key]) || $userAnswers[$key] === "") {
+                            $totalSkipped++; // Hole
+                        } else {
+                            if ((int)$userAnswers[$key] === $correctSum) {
+                                $totalCorrect++;
+                            } else {
+                                $totalError++;
+                            }
+                        }
+                    }
+                    $resultsPerColumn[] = $maxRowFilled + 1;
+                } else {
+                    $resultsPerColumn[] = 0;
                 }
             }
 
-            // Simpan semua kolom untuk menghindari Error 500 Database
-            $test->update([
-                'answers'         => $answers,
-                'total_answered'  => $totalAnswered,
-                'total_correct'   => $totalCorrect,
-                'total_wrong'     => $totalAnswered - $totalCorrect,
-                'stability_score' => 0, // Placeholder nilai default
-                'completed_at'    => now(),
-            ]);
-
-            $test->jobApplication->update(['status' => 'test_completed']);
-
-            return response()->json([
-                'status'   => 'success',
-                // Pastikan route ini ada di web.php Anda
-                'redirect' => route('seeker.kraepelin.completed', $test->jobApplication->id)
-            ]);
+            // 3. Hitung Indikator Utama
+            $totalCols = count($resultsPerColumn);
             
-        } catch (\Exception $e) {
+            // PANKER (Kecepatan)
+            $panker = array_sum($resultsPerColumn) / $totalCols;
+
+            // TIANKER (Ketelitian)
+            $tianker = $totalError + $totalSkipped;
+
+            // JANKER (Stabilitas)
+            $janker = max($resultsPerColumn) - min($resultsPerColumn);
+
+            // GANKER (Ketahanan/Slope)
+            $half = floor($totalCols / 2);
+            if ($half > 0) {
+                $avgFirst = array_sum(array_slice($resultsPerColumn, 0, $half)) / $half;
+                $avgSecond = array_sum(array_slice($resultsPerColumn, $half)) / ($totalCols - $half);
+                $ganker = $avgSecond - $avgFirst;
+            } else {
+                $ganker = 0;
+            }
+
+            // 4. Update Database
+            $test->update([
+                'answers' => $userAnswers,
+                'results_chart' => $resultsPerColumn,
+                'panker' => $panker,
+                'tianker' => $tianker,
+                'janker' => $janker,
+                'ganker' => $ganker,
+                'total_correct' => $totalCorrect,
+                'total_answered' => $totalCorrect + $totalError,
+                'completed_at' => now(),
+            ]);
+
+            $test->jobApplication->update(['status' => JobApplication::STATUS_TEST_COMPLETED]);
+
+            DB::commit();
             return response()->json([
-                'status'  => 'error',
-                'message' => $e->getMessage()
-            ], 500);
+                'status' => 'success',
+                'redirect' => route('seeker.kraepelin.completed', $test->job_application_id)
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error("Kraepelin Submit Error: " . $e->getMessage());
+            return response()->json(['status' => 'error', 'message' => 'Terjadi kesalahan sistem.'], 500);
         }
     }
 
     /**
-     * Menampilkan Halaman Selesai (Post-Test) untuk Seeker
+     * Halaman sukses setelah tes.
      */
     public function showCompleted($applicationId)
     {
         $application = JobApplication::where('id', $applicationId)
-            ->where('user_id', auth()->id())
+            ->where('user_id', Auth::id())
+            ->with('kraepelinTest')
             ->firstOrFail();
 
-        // Hanya boleh diakses jika statusnya sudah selesai
-        if ($application->status !== JobApplication::STATUS_TEST_COMPLETED && $application->status !== JobApplication::STATUS_INTERVIEW) {
-            return redirect()->route('seeker.dashboard');
-        }
-
-        return view('seeker.kraepelin.completed', compact('application'));
-    }
-
-    /**
-     * Ekspor PDF (Khusus Company)
-     */
-    public function exportPdf(JobApplication $application)
-    {
-        $application->load(['kraepelinTest', 'user', 'job']);
         $test = $application->kraepelinTest;
 
         if (!$test || !$test->completed_at) {
-            return back()->with('error', 'Data tes belum tersedia.');
+            return redirect()->route('seeker.dashboard')->with('error', 'Hasil tes belum tersedia.');
         }
 
-        // Perhitungan Metrik Psikologi Detail
-        $totalAnswered = $test->total_answered;
-        $totalCorrect = $test->total_correct;
-        $accuracy = $totalAnswered > 0 ? round(($totalCorrect / $totalAnswered) * 100, 2) : 0;
-        $pankerLabel = $totalAnswered > 1200 ? 'Sangat Tinggi' : ($totalAnswered > 800 ? 'Tinggi' : 'Moderat');
-        $tiankerLabel = $accuracy > 95 ? 'Sangat Teliti' : ($accuracy > 85 ? 'Teliti' : 'Cukup Teliti');
-        $pdf = Pdf::loadView('company.applications.kraepelin_pdf', compact('application', 'test', 'accuracy', 'pankerLabel', 'tiankerLabel'));
-        $pdf->setPaper('a4', 'portrait');
+        return view('seeker.kraepelin.completed', compact('application', 'test'));
+    }
 
-        return $pdf->download('Laporan_Kraepelin_' . str_replace(' ', '_', $application->user->name) . '.pdf');
+    /**
+     * Ekspor PDF.
+     */
+    public function exportPdf(JobApplication $application)
+    {
+        $application->load(['kraepelinTest', 'user', 'job.company']);
+        $test = $application->kraepelinTest;
+
+        if (!$test || !$test->completed_at) {
+            return back()->with('error', 'Data tes tidak lengkap.');
+        }
+
+        $analysis = [
+            'speed' => $this->getLabel($test->panker, 10, 15),
+            'accuracy' => $test->tianker < 5 ? 'Sangat Baik' : ($test->tianker < 15 ? 'Baik' : 'Perlu Perhatian'),
+            'consistency' => $test->janker < 5 ? 'Sangat Stabil' : ($test->janker < 10 ? 'Stabil' : 'Fluktuatif'),
+            'endurance' => $test->ganker >= 0 ? 'Meningkat/Stabil' : 'Menurun (Mudah Lelah)'
+        ];
+
+        $pdf = Pdf::loadView('company.applications.kraepelin_pdf', compact('application', 'test', 'analysis'));
+        return $pdf->setPaper('a4', 'portrait')->download('Laporan_Kraepelin_' . $application->user->name . '.pdf');
+    }
+
+    private function getLabel($val, $low, $high)
+    {
+        if ($val < $low) return 'Rendet (Rendah)';
+        if ($val > $high) return 'Cepat (Tinggi)';
+        return 'Normal (Sedang)';
     }
 }
