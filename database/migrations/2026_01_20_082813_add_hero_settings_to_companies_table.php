@@ -12,8 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('companies', function (Blueprint $table) {
-            // Kita cek satu per satu agar tidak terjadi error "Duplicate Column"
-            
+            // --- BAGIAN 1: MEDIA SOSIAL & PROFIL ---
             if (!Schema::hasColumn('companies', 'facebook')) {
                 $table->string('facebook')->nullable()->after('company_website');
             }
@@ -30,7 +29,7 @@ return new class extends Migration
                 $table->string('company_profile_url')->nullable()->after('instagram');
             }
 
-            // Bagian Hero Section yang benar-benar belum ada
+            // --- BAGIAN 2: HERO SECTION (YANG TADI ERROR) ---
             if (!Schema::hasColumn('companies', 'hero_title')) {
                 $table->string('hero_title')->nullable()->after('company_profile_url');
             }

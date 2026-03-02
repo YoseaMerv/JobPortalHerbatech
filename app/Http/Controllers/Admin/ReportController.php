@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\DB;
 
 class ReportController extends Controller
 {
-    public function jobs()
+    public function jobs(Request $request)
     {
         $stats = [
             'total' => Job::count(),
@@ -27,7 +27,7 @@ class ReportController extends Controller
         return view('admin.reports.jobs', compact('stats'));
     }
 
-    public function applications()
+    public function applications(Request $request)
     {
         $stats = [
             'total' => JobApplication::count(),
@@ -45,7 +45,7 @@ class ReportController extends Controller
         return view('admin.reports.applications', compact('stats'));
     }
 
-    public function users()
+    public function users(Request $request)
     {
         $stats = [
             'total' => User::count(),
