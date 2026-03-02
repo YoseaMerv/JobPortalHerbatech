@@ -37,6 +37,11 @@ class Company extends Model
         'founded_date',
         'is_verified',
         'is_active',
+        'user_id',
+        'company_name',
+        'company_email',
+        'company_description',
+        'company_logo',
     ];
 
     protected $casts = [

@@ -16,25 +16,27 @@
                 <div class="row mb-4">
                     <div class="col-sm-6">
                         <h6 class="text-muted text-uppercase small ls-1 mb-2">Informasi Pekerjaan</h6>
-                        <h4 class="fw-bold mb-1">{{ $application->job->title }}</h4>
-                        <div class="text-primary mb-2 fw-semibold">{{ $application->job->company->company_name }}</div>
+                        {{-- FIX: Null-safe operator (?->) dan fallback text --}}
+                        <h4 class="fw-bold mb-1">{{ $application->job?->title ?? 'Lowongan Telah Dihapus' }}</h4>
+                        <div class="text-primary mb-2 fw-semibold">{{ $application->job?->company?->company_name ?? 'Perusahaan Tidak Tersedia' }}</div>
                         <div class="text-muted small">
-                            <i class="fas fa-map-marker-alt me-1"></i> {{ $application->job->location->name }}
+                            <i class="fas fa-map-marker-alt me-1"></i> {{ $application->job?->location?->name ?? 'Lokasi Tidak Tersedia' }}
                         </div>
                     </div>
                     <div class="col-sm-6 text-sm-end mt-3 mt-sm-0">
                         <h6 class="text-muted text-uppercase small ls-1 mb-2">Status Lamaran</h6>
-                        <span class="badge bg-{{ $application->status_badge }} px-3 py-2 rounded-pill shadow-sm fs-6">
+                        <span class="badge bg-{{ $application->status_badge ?? 'secondary' }} px-3 py-2 rounded-pill shadow-sm fs-6">
                             {{ ucfirst(str_replace('_', ' ', $application->status_label ?? $application->status)) }}
                         </span>
                         <div class="text-muted extra-small mt-2">Dikirim pada: {{ $application->created_at->format('d M Y') }}</div>
                     </div>
                 </div>
 
+                {{-- Banner Tes Kraepelin --}}
                 @if(in_array($application->status, ['test_invited', 'test_in_progress']))
                     <div class="alert alert-primary border-0 shadow-sm mb-5 p-4 rounded-4" style="background-color: #eef2ff; border-left: 5px solid #4338ca !important;">
                         <div class="d-flex align-items-center mb-3">
-                            <div class="icon-box bg-primary text-white rounded-circle me-3 flex-shrink-0" style="width: 50px; height: 50px;">
+                            <div class="icon-box bg-primary text-white rounded-circle me-3 flex-shrink-0 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
                                 <i class="fas fa-file-signature fa-lg"></i>
                             </div>
                             <div>
@@ -60,6 +62,7 @@
                     </div>
                 @endif
 
+                {{-- Banner Interview --}}
                 @if($application->status === 'interview')
                     <div class="alert alert-success border-0 shadow-sm mb-5 p-4 rounded-4" style="background-color: #f0fdf4; border-left: 5px solid #16a34a !important;">
                         <div class="d-flex align-items-center mb-3">
@@ -89,9 +92,10 @@
 
                 <h6 class="text-muted text-uppercase small ls-1 mb-3 fw-bold">Dokumen Lamaran</h6>
                 <div class="row g-3 mb-4">
+                    {{-- File CV --}}
                     <div class="col-md-6">
                         <div class="p-3 border rounded-4 bg-light d-flex align-items-center transition-all hover-shadow">
-                            <div class="icon-box bg-danger-subtle text-danger rounded-3 p-3 me-3" style="width: 45px; height: 45px; display: flex; align-items: center; justify-content: center;">
+                            <div class="icon-box bg-danger-subtle text-danger rounded-3 p-3 me-3" style="width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; background-color: #fee2e2;">
                                 <i class="fas fa-file-pdf fa-lg"></i>
                             </div>
                             <div class="overflow-hidden">
@@ -107,9 +111,10 @@
                         </div>
                     </div>
 
+                    {{-- File Cover Letter --}}
                     <div class="col-md-6">
                         <div class="p-3 border rounded-4 bg-light d-flex align-items-center transition-all hover-shadow">
-                            <div class="icon-box bg-primary-subtle text-primary rounded-3 p-3 me-3" style="width: 45px; height: 45px; display: flex; align-items: center; justify-content: center;">
+                            <div class="icon-box bg-primary-subtle text-primary rounded-3 p-3 me-3" style="width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; background-color: #e0e7ff;">
                                 <i class="fas fa-envelope-open-text fa-lg"></i>
                             </div>
                             <div class="overflow-hidden">

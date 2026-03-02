@@ -15,12 +15,22 @@ return new class extends Migration
             $table->foreignId('location_id')->constrained('job_locations')->onDelete('cascade');
             $table->string('title');
             $table->string('slug')->unique();
+            
+            // Penambahan kolom baru berdasarkan error update
+            $table->string('department')->nullable(); 
+            $table->enum('work_setting', ['on_site', 'remote', 'hybrid'])->default('on_site');
+            $table->boolean('is_salary_visible')->default(true);
+            
             $table->text('description');
             $table->text('requirements')->nullable();
             $table->text('responsibilities')->nullable();
+            
+            // Bagian Gaji (Salary)
             $table->decimal('salary_min', 10, 2)->nullable();
             $table->decimal('salary_max', 10, 2)->nullable();
+            $table->string('salary_currency', 3)->default('IDR'); // TAMBAHKAN INI (IDR, USD, dll)
             $table->enum('salary_type', ['monthly', 'yearly', 'hourly', 'project'])->default('monthly');
+            
             $table->enum('job_type', ['full_time', 'part_time', 'contract', 'freelance', 'internship'])->default('full_time');
             $table->enum('experience_level', ['entry', 'junior', 'mid', 'senior', 'lead', 'manager'])->default('junior');
             $table->enum('education_level', ['sd', 'smp', 'sma', 'd3', 's1', 's2', 's3'])->nullable();

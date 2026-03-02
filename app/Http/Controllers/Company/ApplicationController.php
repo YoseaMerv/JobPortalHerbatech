@@ -76,14 +76,23 @@ class ApplicationController extends Controller
         return Storage::disk('public')->download($application->cv_path);
     }
 
-    public function downloadCover(JobApplication $application)
-    {
-        if ($application->cover_letter_path && Storage::exists($application->cover_letter_path)) {
-            return Storage::download($application->cover_letter_path);
-        }
+public function downloadCover(JobApplication $application)
+{
+    // 1. Tambahkan proteksi akses agar perusahaan lain tidak bisa asal download
+    $this->authorizeAccess($application);
+
+    // 2. Gunakan disk 'public' agar sama dengan saat file disimpan
+    $path = $application->cover_letter_path;
+
+    if ($path && Storage::disk('public')->exists($path)) {
+        // 3. Berikan nama file yang rapi saat didownload
+        $filename = str_replace(' ', '_', $application->user->name) . '_Cover_Letter.' . pathinfo($path, PATHINFO_EXTENSION);
         
-        return back()->with('error', 'File tidak ditemukan.');
+        return Storage::disk('public')->download($path, $filename);
     }
+    
+    return back()->with('error', 'File Surat Lamaran tidak ditemukan di server.');
+}
 
     private function authorizeAccess(JobApplication $application)
     {

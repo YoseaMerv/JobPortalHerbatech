@@ -89,9 +89,8 @@ Route::prefix('company')->name('company.')->middleware(['auth', 'verified', 'rol
     Route::get('/dashboard', [CompanyDashboardController::class, 'index'])->name('dashboard');
 
     // Profile
-    Route::get('/profile', [\App\Http\Controllers\Company\ProfileController::class, 'edit'])->name('profile.edit');
-    Route::put('/profile', [\App\Http\Controllers\Company\ProfileController::class, 'update'])->name('profile.update');
-    
+    Route::get('/settings', [\App\Http\Controllers\Company\ProfileController::class, 'edit'])->name('profile.edit');
+    Route::put('/settings', [\App\Http\Controllers\Company\ProfileController::class, 'update'])->name('profile.update');
     // Jobs
     Route::resource('jobs', \App\Http\Controllers\Company\JobController::class);
     Route::post('jobs/{job}/publish', [\App\Http\Controllers\Company\JobController::class, 'publish'])->name('jobs.publish');

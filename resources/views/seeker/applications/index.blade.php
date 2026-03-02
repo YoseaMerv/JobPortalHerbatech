@@ -22,10 +22,11 @@
                             @forelse($applications as $application)
                             <tr>
                                 <td class="ps-4">
-                                    <div class="fw-bold">{{ $application->job->title }}</div>
-                                    <div class="small text-muted">{{ $application->job->location->name }}</div>
+                                    {{-- FIX: Gunakan null-safe operator (?->) dan fallback text --}}
+                                    <div class="fw-bold">{{ $application->job?->title ?? 'Lowongan Tidak Tersedia' }}</div>
+                                    <div class="small text-muted">{{ $application->job?->location?->name ?? 'Lokasi Tidak Diketahui' }}</div>
                                 </td>
-                                <td>{{ $application->job->company->company_name }}</td>
+                                <td>{{ $application->job?->company?->company_name ?? 'Perusahaan Tidak Tersedia' }}</td>
                                 <td>{{ $application->created_at->format('d M Y') }}</td>
                                 <td>
                                     <span class="badge bg-{{ match($application->status) {
@@ -35,13 +36,8 @@
                                         'rejected' => 'danger',
                                         default => 'secondary'
                                     } }}">
-                                        {{ match($application->status) {
-                                            'pending' => 'Menunggu',
-                                            'shortlisted' => 'Terpilih',
-                                            'accepted' => 'Diterima',
-                                            'rejected' => 'Ditolak',
-                                            default => ucfirst($application->status)
-                                        } }}
+                                        {{-- Gunakan label status jika ada di model, atau fallback --}}
+                                        {{ $application->status_label ?? ucfirst($application->status) }}
                                     </span>
                                 </td>
                                 <td class="text-end pe-4">

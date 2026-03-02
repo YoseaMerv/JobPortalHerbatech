@@ -8,20 +8,32 @@ use App\Models\Job;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 
 class ApplicationController extends Controller
 {
+    /**
+     * Master status yang diizinkan dalam sistem.
+     * Termasuk status untuk integrasi Tes Kraepelin.
+     */
+    protected $allowedStatuses = 'pending,reviewed,shortlisted,test_invited,test_in_progress,interview,rejected,accepted';
+
     public function index(Request $request)
     {
-        // Eager load relasi untuk menghindari N+1 Query
-        $query = JobApplication::with(['job.company', 'user']);
+        // Eager load relasi. withTrashed() digunakan pada job agar data lamaran 
+        // tetap bisa diakses meskipun lowongannya sudah dihapus (soft delete).
+        $query = JobApplication::with([
+            'job' => function($q) { $q->withTrashed(); },
+            'job.company', 
+            'user'
+        ]);
 
-        // Filter jika datang dari tombol "Lihat Lamaran" di detail lowongan
+        // Filter berdasarkan lowongan spesifik
         if ($request->filled('job_id')) {
             $query->where('job_id', $request->job_id);
         }
 
-        // Fitur Pencarian berdasarkan nama pelamar atau judul posisi
+        // Fitur Pencarian (Nama Pelamar atau Judul Posisi)
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function($q) use ($search) {
@@ -33,7 +45,6 @@ class ApplicationController extends Controller
             });
         }
 
-        // Tampilkan 15 data dan bawa parameter query (search/job_id) ke pagination
         $applications = $query->latest()->paginate(15)->appends($request->query());
             
         return view('admin.applications.index', compact('applications'));
@@ -41,9 +52,9 @@ class ApplicationController extends Controller
 
     public function create()
     {
-        // Hanya ambil lowongan yang statusnya 'published' (Tayang)
+        // Hanya ambil lowongan yang aktif
         $jobs = Job::with('company')->where('status', 'published')->latest()->get();
-        // Hanya ambil user dengan role 'seeker'
+        // Hanya ambil user dengan role seeker
         $users = User::where('role', 'seeker')->orderBy('name')->get();
         
         return view('admin.applications.create', compact('jobs', 'users'));
@@ -58,9 +69,9 @@ class ApplicationController extends Controller
             'cover_letter' => 'nullable|string',
         ]);
 
-        // Cek apakah user sudah pernah melamar di posisi ini (mencegah double data)
+        // Proteksi data ganda
         if (JobApplication::where('job_id', $request->job_id)->where('user_id', $request->user_id)->exists()) {
-             return back()->withInput()->with('error', 'Gagal! Kandidat ini sudah melamar pada lowongan tersebut.');
+             return back()->withInput()->with('error', 'Kandidat ini sudah terdaftar melamar pada lowongan tersebut.');
         }
 
         $path = $request->file('cv_path')->store('resumes', 'public');
@@ -78,13 +89,14 @@ class ApplicationController extends Controller
     
     public function show(JobApplication $application)
     {
-        // Load seluruh relasi profil dan tes kraepelin untuk direview di halaman detail
+        // Memuat seluruh data pendukung untuk review mendalam oleh Admin
         $application->load([
+            'job' => function($q) { $q->withTrashed(); },
             'job.company', 
             'user.seekerProfile.experiences', 
             'user.seekerProfile.educations', 
             'user.seekerProfile.skills',
-            'kraepelinTest'
+            'kraepelinTest' // Data hasil tes jika ada
         ]);
         
         return view('admin.applications.show', compact('application'));
@@ -92,16 +104,14 @@ class ApplicationController extends Controller
 
     public function edit(JobApplication $application)
     {
-        // Karena di UI Edit yang baru kita HANYA mengubah status dan catatan, 
-        // kita tidak perlu lagi memuat seluruh data $jobs dan $users (lebih efisien).
-        $application->load(['user', 'job']);
+        $application->load(['user', 'job' => function($q) { $q->withTrashed(); }]);
         return view('admin.applications.edit', compact('application'));
     }
 
     public function update(Request $request, JobApplication $application)
     {
         $request->validate([
-            'status'       => 'required|in:pending,reviewed,shortlisted,interview,rejected,accepted',
+            'status'       => 'required|in:' . $this->allowedStatuses,
             'cover_letter' => 'nullable|string',
             'notes'        => 'nullable|string',
         ]);
@@ -112,55 +122,60 @@ class ApplicationController extends Controller
             'notes'        => $request->notes,
         ]);
 
-        return redirect()->route('admin.applications.index')->with('success', 'Status dan catatan lamaran berhasil diperbarui.');
+        return redirect()->route('admin.applications.index')->with('success', 'Informasi lamaran telah diperbarui.');
     }
 
     public function destroy(JobApplication $application)
     {
-        // Hapus file CV dari disk lokal untuk menghemat memori server
+        // Hapus file fisik agar tidak memenuhi storage
         if ($application->cv_path && Storage::disk('public')->exists($application->cv_path)) {
             Storage::disk('public')->delete($application->cv_path);
         }
         
-        // Hapus juga data hasil tes Kraepelin jika lamaran ini dihapus
+        // Hapus data tes Kraepelin terkait jika ada
         if ($application->kraepelinTest) {
             $application->kraepelinTest->delete();
         }
         
         $application->delete();
-        return redirect()->route('admin.applications.index')->with('success', 'Lamaran beserta file dokumennya berhasil dihapus.');
+        return redirect()->route('admin.applications.index')->with('success', 'Data lamaran dan berkas terkait telah dihapus.');
     }
 
-    // --- Method Tambahan (Action Singkat) ---
-
+    /**
+     * Quick Action: Update status lamaran tanpa masuk ke halaman edit.
+     */
     public function updateStatus(Request $request, JobApplication $application)
     {
         $request->validate([
-            'status' => 'required|in:pending,reviewed,shortlisted,interview,rejected,accepted',
+            'status' => 'required|in:' . $this->allowedStatuses,
         ]);
 
         $application->update(['status' => $request->status]);
 
         $statusText = match($request->status) {
-            'pending'     => 'Menunggu',
-            'reviewed'    => 'Ditinjau',
-            'shortlisted' => 'Terpilih',
-            'interview'   => 'Wawancara',
-            'accepted'    => 'Diterima',
-            'rejected'    => 'Ditolak',
-            default       => ucfirst($request->status)
+            'pending'          => 'Menunggu',
+            'reviewed'         => 'Ditinjau',
+            'shortlisted'      => 'Terpilih',
+            'test_invited'     => 'Diundang Tes Kraepelin',
+            'test_in_progress' => 'Sedang Mengerjakan Tes',
+            'interview'        => 'Wawancara',
+            'accepted'         => 'Diterima',
+            'rejected'         => 'Ditolak',
+            default            => ucfirst($request->status)
         };
 
         return back()->with('success', 'Status lamaran berhasil diubah menjadi: ' . $statusText);
     }
 
+    /**
+     * Mengunduh file CV dengan aman.
+     */
     public function downloadCv(JobApplication $application)
     {
         if (!$application->cv_path || !Storage::disk('public')->exists($application->cv_path)) {
-            return back()->with('error', 'File CV tidak ditemukan di dalam server.');
+            return back()->with('error', 'Maaf, file CV tidak ditemukan di server.');
         }
 
-        // Menggunakan Storage download agar lebih aman dari serangan path traversal
         return Storage::disk('public')->download($application->cv_path);
     }
 }

@@ -12,7 +12,7 @@
         ->first();
         @endphp
 
-        {{-- 2. BANNER NOTIFIKASI TES (Hanya muncul jika ada undangan) --}}
+        {{-- 2. BANNER NOTIFIKASI TES --}}
         @if($testInvitation)
         <div class="alert alert-indigo border-0 shadow-sm mb-4 d-flex align-items-center p-4" style="border-radius: 16px;">
             <div class="me-4 flex-shrink-0">
@@ -25,7 +25,8 @@
                 <p class="mb-3 small opacity-90">
                     {{ $testInvitation->status === 'test_in_progress' 
                         ? 'Selesaikan tes Anda yang sedang berlangsung agar progres tersimpan.' 
-                        : 'Anda terpilih untuk tahap tes pada posisi ' . $testInvitation->job->title }}
+                        // FIX: Tambahkan null check ?-> pada job
+                        : 'Anda terpilih untuk tahap tes pada posisi ' . ($testInvitation->job?->title ?? 'Posisi Terkait') }}
                 </p>
 
                 @php
@@ -44,7 +45,7 @@
 
         {{-- 3. STATISTIK UTAMA --}}
         <div class="row mb-4">
-            <div class="col-md-4">
+            <div class="col-md-4 mb-3">
                 <div class="card bg-primary shadow-sm h-100 border-0 overflow-hidden" style="border-radius: 16px;">
                     <div class="card-body text-center py-4 position-relative">
                         <div class="mb-2 opacity-25 position-absolute end-0 top-0 p-3"><i class="fas fa-paper-plane fa-3x text-white"></i></div>
@@ -53,7 +54,7 @@
                     </div>
                 </div>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-4 mb-3">
                 <div class="card bg-info shadow-sm h-100 border-0 overflow-hidden" style="border-radius: 16px;">
                     <div class="card-body text-center py-4 position-relative">
                         <div class="mb-2 opacity-25 position-absolute end-0 top-0 p-3"><i class="fas fa-check-circle fa-3x text-white"></i></div>
@@ -62,7 +63,7 @@
                     </div>
                 </div>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-4 mb-3">
                 <div class="card bg-dark shadow-sm h-100 border-0 overflow-hidden" style="border-radius: 16px;">
                     <div class="card-body text-center py-4 position-relative">
                         <div class="mb-2 opacity-25 position-absolute end-0 top-0 p-3"><i class="fas fa-bookmark fa-3x text-white"></i></div>
@@ -77,8 +78,7 @@
         <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px;">
             <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
                 <h6 class="mb-0 fw-bold text-dark"><i class="fas fa-history me-2 text-primary"></i>Aktivitas Lamaran</h6>
-
-                {{-- PERBAIKAN: Gunakan tombol dinamis berdasarkan ada tidaknya undangan --}}
+                
                 @if($testInvitation)
                 <a href="{{ route('seeker.kraepelin.instructions', $testInvitation->id) }}"
                     class="btn btn-primary btn-sm fw-bold px-4 rounded-pill shadow-sm">
@@ -103,8 +103,9 @@
                             @forelse($data['recentApplications'] as $app)
                             <tr>
                                 <td class="ps-4">
-                                    <div class="fw-bold text-dark" style="font-size: 0.95rem;">{{ $app->job->title }}</div>
-                                    <div class="text-muted small">{{ $app->job->company?->company_name }}</div>
+                                    {{-- FIX: Gunakan null-safe operator ?-> dan fallback text --}}
+                                    <div class="fw-bold text-dark" style="font-size: 0.95rem;">{{ $app->job?->title ?? 'Lowongan Telah Dihapus' }}</div>
+                                    <div class="text-muted small">{{ $app->job?->company?->company_name ?? 'Perusahaan Tidak Tersedia' }}</div>
                                 </td>
                                 <td class="text-center">
                                     <span class="badge rounded-pill px-3 py-2 
@@ -139,7 +140,7 @@
 
     {{-- SIDEBAR KANAN --}}
     <div class="col-md-4">
-        {{-- Widget hanya muncul jika skor di bawah 100 --}}
+        {{-- Widget Profil Skor --}}
         @if($data['profileScore'] < 100)
         <div class="card border-0 shadow-sm mb-4 overflow-hidden" style="border-radius: 16px;">
             <div class="card-body p-4">
@@ -175,10 +176,11 @@
                 @forelse($featuredJobs as $job)
                 <a href="{{ route('seeker.jobs.show', $job->id) }}" class="list-group-item list-group-item-action p-3 border-0 border-bottom">
                     <div class="d-flex w-100 justify-content-between mb-1">
-                        <h6 class="mb-0 fw-bold text-indigo" style="font-size: 0.9rem;">{{ Str::limit($job->title, 25) }}</h6>
+                        {{-- FIX: Null check title --}}
+                        <h6 class="mb-0 fw-bold text-indigo" style="font-size: 0.9rem;">{{ Str::limit($job->title ?? 'Judul Lowongan', 25) }}</h6>
                         <small class="text-muted smaller">{{ $job->created_at->diffForHumans() }}</small>
                     </div>
-                    <div class="text-dark small mb-2">{{ $job->company?->company_name }}</div>
+                    <div class="text-dark small mb-2">{{ $job->company?->company_name ?? 'Perusahaan' }}</div>
                     <div class="d-flex gap-2 flex-wrap">
                         <span class="badge bg-light text-muted fw-normal border" style="font-size: 0.7rem;">{{ $job->location?->name ?? 'Remote' }}</span>
                         <span class="badge bg-light text-muted fw-normal border" style="font-size: 0.7rem;">{{ ucfirst(str_replace('_', ' ', $job->job_type)) }}</span>
@@ -190,23 +192,15 @@
             </div>
         </div>
     </div>
+</div>
 
 <style>
     .alert-indigo {
         background: linear-gradient(135deg, #6366f1 0%, #4338ca 100%);
         color: white;
     }
-
-    .text-indigo {
-        color: #4338ca;
-    }
-
-    .extra-small {
-        font-size: 0.7rem;
-    }
-
-    .smaller {
-        font-size: 0.75rem;
-    }
+    .text-indigo { color: #4338ca; }
+    .extra-small { font-size: 0.7rem; }
+    .smaller { font-size: 0.75rem; }
 </style>
 @endsection

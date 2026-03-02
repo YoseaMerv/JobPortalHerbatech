@@ -19,7 +19,6 @@
         --brand-indigo: #4338ca; 
     }
 
-    /* Container Full Width */
     .full-container { width: 100%; max-width: 100%; padding: 0 15px; }
     
     .create-card { 
@@ -36,7 +35,6 @@
         background: linear-gradient(to right, #ffffff, var(--slate-50));
     }
 
-    /* Form Elements Styling */
     .form-label {
         font-size: 0.85rem;
         font-weight: 700;
@@ -72,17 +70,9 @@
     .section-label-display::after {
         content: ""; flex: 1; height: 1px; background: var(--slate-100); margin-left: 20px;
     }
-
-    .input-group-text {
-        background-color: var(--slate-50);
-        border-color: var(--slate-200);
-        color: var(--text-muted);
-        border-radius: 10px 0 0 10px;
-        font-weight: 600;
-    }
 </style>
 
-<div class="full-container">
+<div class="full-container pb-5">
     <div class="mb-4 d-flex justify-content-between align-items-center">
         <a href="{{ route('company.jobs.index') }}" class="text-decoration-none text-muted fw-bold small">
             <i class="fas fa-chevron-left me-2"></i> KEMBALI KE MANAJEMEN
@@ -96,16 +86,6 @@
         </div>
 
         <div class="card-body p-4 p-md-5">
-            @if ($errors->any())
-                <div class="alert alert-danger border-0 shadow-sm mb-4" style="border-radius: 12px;">
-                    <ul class="mb-0 small fw-medium">
-                        @foreach ($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
-                </div>
-            @endif
-
             <form action="{{ route('company.jobs.store') }}" method="POST">
                 @csrf
                 
@@ -114,6 +94,7 @@
                     <div class="col-md-6">
                         <label for="title" class="form-label">Jabatan / Judul Pekerjaan <span class="text-danger">*</span></label>
                         <input type="text" class="form-control @error('title') is-invalid @enderror" id="title" name="title" value="{{ old('title') }}" placeholder="Contoh: Senior Pharmacist" required>
+                        @error('title') <div class="invalid-feedback">{{ $message }}</div> @enderror
                     </div>
                     <div class="col-md-6">
                         <label for="department" class="form-label">Departemen</label>
@@ -152,42 +133,58 @@
 
                 <div class="section-label-display">Ketentuan & Kompensasi</div>
                 <div class="row g-4 mb-4">
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <label for="job_type" class="form-label">Jenis Pekerjaan <span class="text-danger">*</span></label>
-                        <select class="form-select @error('job_type') is-invalid @enderror" id="job_type" name="job_type" required>
-                            <option value="full_time" {{ old('job_type') == 'full_time' ? 'selected' : '' }}>Purnawaktu (Full-time)</option>
+                        <select class="form-select" id="job_type" name="job_type" required>
+                            <option value="full_time" {{ old('job_type') == 'full_time' ? 'selected' : '' }}>Purnawaktu</option>
                             <option value="part_time" {{ old('job_type') == 'part_time' ? 'selected' : '' }}>Paruh Waktu</option>
                             <option value="contract" {{ old('job_type') == 'contract' ? 'selected' : '' }}>Kontrak</option>
                             <option value="internship" {{ old('job_type') == 'internship' ? 'selected' : '' }}>Magang</option>
                         </select>
                     </div>
-                    <div class="col-md-4">
-                        <label for="salary_min" class="form-label">Gaji Minimum (Rp)</label>
+                    <div class="col-md-3">
+                        <label for="salary_currency" class="form-label">Mata Uang <span class="text-danger">*</span></label>
+                        <select class="form-select @error('salary_currency') is-invalid @enderror" name="salary_currency" required>
+                            <option value="IDR" {{ old('salary_currency') == 'IDR' ? 'selected' : '' }}>IDR (Rp)</option>
+                            <option value="USD" {{ old('salary_currency') == 'USD' ? 'selected' : '' }}>USD ($)</option>
+                        </select>
+                        @error('salary_currency') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                    </div>
+                    <div class="col-md-3">
+                        <label for="salary_min" class="form-label">Gaji Minimum</label>
                         <input type="number" class="form-control" name="salary_min" value="{{ old('salary_min') }}" placeholder="0">
                     </div>
-                    <div class="col-md-4">
-                        <label for="salary_max" class="form-label">Gaji Maksimum (Rp)</label>
+                    <div class="col-md-3">
+                        <label for="salary_max" class="form-label">Gaji Maksimum</label>
                         <input type="number" class="form-control" name="salary_max" value="{{ old('salary_max') }}" placeholder="0">
                     </div>
                 </div>
 
-                <div class="row g-4 mb-4 align-items-end">
-                    <div class="col-md-4">
+                <div class="row g-4 mb-4 align-items-center">
+                    <div class="col-md-3">
                         <label for="salary_type" class="form-label">Tampilkan Gaji Per</label>
                         <select class="form-select" name="salary_type">
                             <option value="monthly" {{ old('salary_type') == 'monthly' ? 'selected' : '' }}>Bulan</option>
                             <option value="yearly" {{ old('salary_type') == 'yearly' ? 'selected' : '' }}>Tahun</option>
+                            <option value="hourly" {{ old('salary_type') == 'hourly' ? 'selected' : '' }}>Jam</option>
                         </select>
                     </div>
-                    <div class="col-md-4">
-                        <label for="vacancy" class="form-label">Jumlah Lowongan (Orang)</label>
+                    <div class="col-md-3">
+                        <label for="vacancy" class="form-label">Jumlah Lowongan</label>
                         <input type="number" class="form-control" name="vacancy" value="{{ old('vacancy', 1) }}" min="1">
                     </div>
-                    <div class="col-md-4">
-                        <div class="form-check form-switch pb-2">
+                    <div class="col-md-3">
+                        <div class="form-check form-switch pt-4">
                             <input type="hidden" name="is_salary_visible" value="0">
-                            <input class="form-check-input" type="checkbox" name="is_salary_visible" id="is_salary_visible" value="1" {{ old('is_salary_visible', true) ? 'checked' : '' }}>
-                            <label class="form-check-label fw-bold small" for="is_salary_visible">Publikasikan Estimasi Gaji</label>
+                            <input class="form-check-input" type="checkbox" name="is_salary_visible" id="is_salary_visible" value="1" {{ old('is_salary_visible', 1) ? 'checked' : '' }}>
+                            <label class="form-check-label fw-bold small" for="is_salary_visible">Tampilkan Gaji ke Publik</label>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-check form-switch pt-4">
+                            <input type="hidden" name="is_featured" value="0">
+                            <input class="form-check-input" type="checkbox" name="is_featured" id="is_featured" value="1" {{ old('is_featured') ? 'checked' : '' }}>
+                            <label class="form-check-label fw-bold small text-primary" for="is_featured"><i class="fas fa-star me-1"></i> Tandai Unggulan</label>
                         </div>
                     </div>
                 </div>
@@ -203,7 +200,17 @@
                             <option value="more_than_5_years" {{ old('experience_level') == 'more_than_5_years' ? 'selected' : '' }}>Diatas 5 Tahun</option>
                         </select>
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-4">
+                        <label for="education_level" class="form-label">Minimal Pendidikan</label>
+                        <select class="form-select" name="education_level">
+                            <option value="">Pilih Pendidikan</option>
+                            <option value="sma" {{ old('education_level') == 'sma' ? 'selected' : '' }}>SMA/SMK</option>
+                            <option value="d3" {{ old('education_level') == 'd3' ? 'selected' : '' }}>D3</option>
+                            <option value="s1" {{ old('education_level') == 's1' ? 'selected' : '' }}>S1 / D4</option>
+                            <option value="s2" {{ old('education_level') == 's2' ? 'selected' : '' }}>S2</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
                         <label for="deadline" class="form-label">Batas Waktu Lamaran <span class="text-danger">*</span></label>
                         <input type="date" class="form-control" id="deadline" name="deadline" value="{{ old('deadline') }}" required>
                     </div>
@@ -211,13 +218,15 @@
 
                 <div class="mb-4">
                     <label for="description" class="form-label">Deskripsi Pekerjaan <span class="text-danger">*</span></label>
-                    <textarea class="form-control" id="description" name="description" rows="6" placeholder="Jelaskan tugas dan tanggung jawab harian..." required style="line-height: 1.6;">{{ old('description') }}</textarea>
+                    <textarea class="form-control" id="description" name="description" rows="5" placeholder="Tuliskan deskripsi pekerjaan secara detail..." required>{{ old('description') }}</textarea>
                 </div>
 
                 <div class="mb-5">
-                    <label for="requirements" class="form-label">Kualifikasi Pelamar <span class="text-danger">*</span></label>
-                    <textarea class="form-control" id="requirements" name="requirements" rows="6" placeholder="Contoh: Pendidikan minimal, skill teknis, sertifikasi..." required style="line-height: 1.6;">{{ old('requirements') }}</textarea>
+                    <label for="requirements" class="form-label">Kualifikasi / Persyaratan <span class="text-danger">*</span></label>
+                    <textarea class="form-control" id="requirements" name="requirements" rows="5" placeholder="Tuliskan kualifikasi yang dibutuhkan..." required>{{ old('requirements') }}</textarea>
                 </div>
+
+                <input type="hidden" name="status" value="published">
 
                 <div class="card-footer bg-white px-0 py-4 border-top d-flex justify-content-between align-items-center">
                     <a href="{{ route('company.jobs.index') }}" class="btn btn-link text-muted fw-bold text-decoration-none">
