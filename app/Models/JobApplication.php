@@ -19,7 +19,7 @@ class JobApplication extends Model
     const STATUS_INTERVIEW = 'interview';
     const STATUS_ACCEPTED = 'accepted';
     const STATUS_REJECTED = 'rejected';
-    
+
     protected $fillable = [
         'job_id',
         'user_id',
@@ -28,7 +28,7 @@ class JobApplication extends Model
         'cover_letter_path',
         'status',
         'notes',
-        'answers', 
+        'answers',
     ];
 
     protected $casts = [
@@ -70,7 +70,7 @@ class JobApplication extends Model
     }
 
     // --- ACCESSORS (UI Logic) ---
-    
+
     // Menambahkan Label Status agar bisa dipanggil di Blade via $application->status_label
     public function getStatusLabelAttribute(): string
     {
@@ -79,7 +79,7 @@ class JobApplication extends Model
 
     public function getStatusBadgeAttribute(): string
     {
-        return match($this->status) {
+        return match ($this->status) {
             self::STATUS_PENDING          => 'warning',
             self::STATUS_REVIEWED         => 'secondary',
             self::STATUS_SHORTLISTED      => 'info',
@@ -95,7 +95,7 @@ class JobApplication extends Model
 
     public function getStatusIconAttribute(): string
     {
-        return match($this->status) {
+        return match ($this->status) {
             self::STATUS_PENDING          => 'fa-clock',
             self::STATUS_REVIEWED         => 'fa-eye',
             self::STATUS_SHORTLISTED      => 'fa-user-check',
@@ -107,5 +107,10 @@ class JobApplication extends Model
             self::STATUS_REJECTED         => 'fa-times-circle',
             default                       => 'fa-info-circle',
         };
+    }
+
+    public function psychologicalResults()
+    {
+        return $this->hasMany(PsychologicalTestResult::class);
     }
 }

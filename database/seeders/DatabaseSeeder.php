@@ -13,6 +13,11 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
+        //Seed Master Data Soal Psikotes (Baru)
+        $this->call([
+            PsychologicalQuestionSeeder::class,
+        ]);
+
         // Create Admin User
         User::firstOrCreate(
             ['email' => 'admin@jobportal.test'],
@@ -67,7 +72,7 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-        
+
 
         if (!$seekerUser->seekerProfile()->exists()) {
             $seekerUser->seekerProfile()->create([
@@ -90,8 +95,16 @@ class DatabaseSeeder extends Seeder
 
         // Seed Job Categories
         $categories = [
-            'Technology', 'Finance', 'Healthcare', 'Education', 'Marketing',
-            'Sales', 'Design', 'Engineering', 'Human Resources', 'Customer Service',
+            'Technology',
+            'Finance',
+            'Healthcare',
+            'Education',
+            'Marketing',
+            'Sales',
+            'Design',
+            'Engineering',
+            'Human Resources',
+            'Customer Service',
         ];
 
         foreach ($categories as $category) {
@@ -107,8 +120,16 @@ class DatabaseSeeder extends Seeder
 
         // Seed Job Locations
         $locations = [
-            'Jakarta', 'Bandung', 'Surabaya', 'Medan', 'Makassar',
-            'Bali', 'Yogyakarta', 'Semarang', 'Malang', 'Remote',
+            'Jakarta',
+            'Bandung',
+            'Surabaya',
+            'Medan',
+            'Makassar',
+            'Bali',
+            'Yogyakarta',
+            'Semarang',
+            'Malang',
+            'Remote',
         ];
 
         foreach ($locations as $location) {
