@@ -51,15 +51,22 @@ class JobApplication extends Model
         ];
     }
 
+    /**
+     * Mengecek apakah pelamar sudah menyelesaikan SEMUA tes yang diwajibkan
+     */
     public function allTestsCompleted()
     {
         // Cek Kraepelin
         $kraepelin = $this->kraepelinTest()->whereNotNull('completed_at')->exists();
 
-        // Cek MSDT & PAPI
+        // Cek MSDT, PAPI, DISC
+        // PERBAIKAN: Gunakan strtolower agar tidak terjadi kegagalan pengecekan karena huruf kapital
         $completedTypes = $this->psychologicalResults()
             ->where('status', 'completed')
             ->pluck('test_type')
+            ->map(function ($type) {
+                return strtolower($type);
+            })
             ->toArray();
 
         $psikotesDone = in_array('msdt', $completedTypes) &&
@@ -68,12 +75,18 @@ class JobApplication extends Model
 
         return $kraepelin && $psikotesDone;
     }
+    
     // --- RELATIONSHIPS ---
 
     public function kraepelinTest()
     {
         // Menggunakan latestOfMany() sudah sangat tepat untuk retake test
         return $this->hasOne(KraepelinTest::class)->latestOfMany();
+    }
+
+    public function psychologicalResults()
+    {
+        return $this->hasMany(PsychologicalTestResult::class);
     }
 
     public function job()
@@ -124,12 +137,5 @@ class JobApplication extends Model
             self::STATUS_REJECTED         => 'fa-times-circle',
             default                       => 'fa-info-circle',
         };
-    }
-
-
-
-    public function psychologicalResults()
-    {
-        return $this->hasMany(PsychologicalTestResult::class);
     }
 }
