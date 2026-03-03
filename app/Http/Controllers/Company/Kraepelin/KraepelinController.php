@@ -74,25 +74,20 @@ class KraepelinController extends Controller
 
     private function checkAndUpgradeStatus($application)
     {
-        // Kraepelin dianggap selesai jika recordnya ada dan completed_at tidak null
+        $application->refresh();
+
+        // Cek Kraepelin
         $kraepelinDone = $application->kraepelinTest()->whereNotNull('completed_at')->exists();
 
-        // MSDT & PAPI dari tabel psychological_test_results
-        $msdtDone = $application->psychologicalResults()->where('test_type', 'msdt')->where('status', 'completed')->exists();
-        $papiDone = $application->psychologicalResults()->where('test_type', 'papi')->where('status', 'completed')->exists();
+        // Cek MSDT, PAPI, DISC
+        $results = $application->psychologicalResults()->where('status', 'completed')->pluck('test_type')->toArray();
 
-        if ($kraepelinDone && $msdtDone && $papiDone) {
+        $othersDone = in_array('msdt', $results) && in_array('papi', $results) && in_array('disc', $results);
+
+        if ($kraepelinDone && $othersDone) {
             $application->update(['status' => JobApplication::STATUS_TEST_COMPLETED]);
-        }
-
-        $application->refresh(); // Ambil data terbaru dari database (PENTING!)
-
-        $kraepelinDone = $application->kraepelinTest()->whereNotNull('completed_at')->exists();
-        $msdtDone = $application->psychologicalResults()->where('test_type', 'msdt')->where('status', 'completed')->exists();
-        $papiDone = $application->psychologicalResults()->where('test_type', 'papi')->where('status', 'completed')->exists();
-
-        if ($kraepelinDone && $msdtDone && $papiDone) {
-            $application->update(['status' => JobApplication::STATUS_TEST_COMPLETED]);
+        } else {
+            $application->update(['status' => JobApplication::STATUS_TEST_IN_PROGRESS]);
         }
     }
 

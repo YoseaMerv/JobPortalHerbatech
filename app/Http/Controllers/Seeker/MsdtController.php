@@ -57,19 +57,19 @@ class MsdtController extends Controller
 
     private function checkAndUpgradeStatus($application)
     {
-        // 1. Ambil data terbaru dari database (PENTING)
         $application->refresh();
 
-        // 2. Cek apakah ketiga tes sudah ada record selesainya
+        // Cek Kraepelin
         $kraepelinDone = $application->kraepelinTest()->whereNotNull('completed_at')->exists();
-        $msdtDone = $application->psychologicalResults()->where('test_type', 'msdt')->where('status', 'completed')->exists();
-        $papiDone = $application->psychologicalResults()->where('test_type', 'papi')->where('status', 'completed')->exists();
 
-        // 3. Update status lamaran
-        if ($kraepelinDone && $msdtDone && $papiDone) {
+        // Cek MSDT, PAPI, DISC
+        $results = $application->psychologicalResults()->where('status', 'completed')->pluck('test_type')->toArray();
+
+        $othersDone = in_array('msdt', $results) && in_array('papi', $results) && in_array('disc', $results);
+
+        if ($kraepelinDone && $othersDone) {
             $application->update(['status' => JobApplication::STATUS_TEST_COMPLETED]);
         } else {
-            // Jika salah satu belum selesai, pastikan status TIDAK MENJADI test_completed
             $application->update(['status' => JobApplication::STATUS_TEST_IN_PROGRESS]);
         }
     }

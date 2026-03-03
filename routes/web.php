@@ -179,4 +179,11 @@ Route::prefix('seeker')->name('seeker.')->middleware(['auth', 'verified', 'role:
         Route::post('/{testId}/submit', [\App\Http\Controllers\Seeker\PapiController::class, 'submitTest'])->name('submit');
         Route::get('/{application}/completed', [\App\Http\Controllers\Seeker\PapiController::class, 'showCompleted'])->name('completed');
     });
+
+    Route::prefix('disc-test')->name('disc.')->group(function () {
+        Route::get('/{application}/instructions', [\App\Http\Controllers\Seeker\DiscController::class, 'showInstructions'])->name('instructions');
+        Route::get('/{application}/start', [\App\Http\Controllers\Seeker\DiscController::class, 'startTest'])->name('start');
+        Route::post('/{testId}/submit', [\App\Http\Controllers\Seeker\DiscController::class, 'submitTest'])->name('submit');
+        Route::get('/{application}/completed', [\App\Http\Controllers\Seeker\DiscController::class, 'showCompleted'])->name('completed');
+    });
 });

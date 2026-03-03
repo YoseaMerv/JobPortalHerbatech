@@ -13,13 +13,23 @@ return new class extends Migration
     {
         Schema::create('psychological_questions', function (Blueprint $table) {
             $table->id();
-            $table->enum('test_type', ['msdt', 'papi']);
+            // 1. Tambahkan 'disc' di sini
+            $table->enum('test_type', ['msdt', 'papi', 'disc']);
             $table->integer('question_number');
-            $table->text('option_a');
-            $table->text('option_b');
-            // Dimension tetap penting untuk mapping PAPI Kostick (G, L, I, dll)
+
+            // Kolom untuk MSDT & PAPI (2 pilihan)
+            $table->text('option_a')->nullable();
+            $table->text('option_b')->nullable();
             $table->string('dimension_a')->nullable();
             $table->string('dimension_b')->nullable();
+
+            // Kolom TAMBAHAN untuk DISC (Mendukung 4 pernyataan per nomor)
+            // Simpan pernyataan dalam format JSON agar fleksibel
+            $table->json('question_text')->nullable();
+            // Simpan mapping dimensi P dan K dalam format JSON
+            $table->json('dimension_p')->nullable();
+            $table->json('dimension_k')->nullable();
+
             $table->timestamps();
         });
 
@@ -27,20 +37,14 @@ return new class extends Migration
             $table->id();
             $table->foreignId('job_application_id')->constrained()->onDelete('cascade');
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->enum('test_type', ['msdt', 'papi']);
+
+            // 2. Tambahkan 'disc' di sini untuk memperbaiki error "Data Truncated"
+            $table->enum('test_type', ['msdt', 'papi', 'disc']);
+
             $table->enum('status', ['in_progress', 'completed'])->default('in_progress');
-
             $table->json('answers')->nullable();
-
-            // final_score akan menyimpan hasil akhir:
-            // PAPI: {"G": 5, "L": 4, ...}
-            // MSDT: {"task": 10, "relation": 8, "style": "Executive"}
             $table->json('final_score')->nullable();
-
-            // TAMBAHKAN KOLOM INI:
-            // Untuk menyimpan interpretasi teks atau deskripsi gaya kepemimpinan/kepribadian
             $table->text('interpretation')->nullable();
-
             $table->timestamp('started_at')->nullable();
             $table->timestamp('completed_at')->nullable();
             $table->timestamps();
