@@ -17,6 +17,7 @@ return new class extends Migration
             $table->integer('question_number');
             $table->text('option_a');
             $table->text('option_b');
+            // Dimension tetap penting untuk mapping PAPI Kostick (G, L, I, dll)
             $table->string('dimension_a')->nullable();
             $table->string('dimension_b')->nullable();
             $table->timestamps();
@@ -24,16 +25,21 @@ return new class extends Migration
 
         Schema::create('psychological_test_results', function (Blueprint $table) {
             $table->id();
-            // Relasi ke job_applications dan users seperti pada kraepelin_tests
             $table->foreignId('job_application_id')->constrained()->onDelete('cascade');
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->enum('test_type', ['msdt', 'papi']);
-
-            // Status pengerjaan
             $table->enum('status', ['in_progress', 'completed'])->default('in_progress');
 
-            $table->json('answers')->nullable(); // Nullable jika baru mulai tes
+            $table->json('answers')->nullable();
+
+            // final_score akan menyimpan hasil akhir:
+            // PAPI: {"G": 5, "L": 4, ...}
+            // MSDT: {"task": 10, "relation": 8, "style": "Executive"}
             $table->json('final_score')->nullable();
+
+            // TAMBAHKAN KOLOM INI:
+            // Untuk menyimpan interpretasi teks atau deskripsi gaya kepemimpinan/kepribadian
+            $table->text('interpretation')->nullable();
 
             $table->timestamp('started_at')->nullable();
             $table->timestamp('completed_at')->nullable();

@@ -51,6 +51,27 @@ class JobApplication extends Model
         ];
     }
 
+    public function allTestsCompleted()
+    {
+        // Cek Kraepelin
+        $kraepelin = $this->kraepelinTest()->whereNotNull('completed_at')->exists();
+
+        // Cek MSDT
+        $msdt = $this->psychologicalResults()
+            ->where('test_type', 'msdt')
+            ->where('status', 'completed')
+            ->exists();
+
+        // Cek PAPI
+        $papi = $this->psychologicalResults()
+            ->where('test_type', 'papi')
+            ->where('status', 'completed')
+            ->exists();
+
+        // Harus ketiganya TRUE
+        return $kraepelin && $msdt && $papi;
+    }
+
     // --- RELATIONSHIPS ---
 
     public function kraepelinTest()
@@ -108,6 +129,8 @@ class JobApplication extends Model
             default                       => 'fa-info-circle',
         };
     }
+
+
 
     public function psychologicalResults()
     {

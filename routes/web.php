@@ -80,7 +80,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'verified', 'role:ad
     // Settings
     Route::get('settings', [\App\Http\Controllers\Admin\SettingController::class, 'index'])->name('settings.index');
     Route::post('settings', [\App\Http\Controllers\Admin\SettingController::class, 'update'])->name('settings.update');
-    });
+});
 
 // ------------------------------------------------------------------
 // Company Routes (Role: Company)
@@ -105,6 +105,15 @@ Route::prefix('company')->name('company.')->middleware(['auth', 'verified', 'rol
 
     // Kraepelin Export untuk Company
     Route::get('applications/{application}/kraepelin-pdf', [KraepelinController::class, 'exportPdf'])->name('applications.kraepelin-pdf');
+
+    // Msdt Export Untuk Company
+    Route::get('applications/{application}/msdt-pdf', [\App\Http\Controllers\Seeker\MsdtController::class, 'exportPdf'])->name('company.applications.msdt-pdf');
+
+    // papi Export Untuk Company
+    Route::get('applications/{application}/papi-pdf', [\App\Http\Controllers\Seeker\PapiController::class, 'exportPdf'])->name('company.applications.papi-pdf');
+
+    Route::get('applications/{application}/psychological-results', [App\Http\Controllers\Company\ApplicationController::class, 'showPsychologicalResults'])
+        ->name('applications.psychological.results');
 });
 
 // ------------------------------------------------------------------
@@ -155,4 +164,19 @@ Route::prefix('seeker')->name('seeker.')->middleware(['auth', 'verified', 'role:
         Route::get('kraepelin-test/{application}/completed', [KraepelinController::class, 'showCompleted'])->name('seeker.kraepelin.completed');
     });
 
+    // MSDT Test (Baru)
+    Route::prefix('msdt-test')->name('msdt.')->group(function () {
+        Route::get('/{application}/instructions', [\App\Http\Controllers\Seeker\MsdtController::class, 'showInstructions'])->name('instructions');
+        Route::get('/{application}/start', [\App\Http\Controllers\Seeker\MsdtController::class, 'startTest'])->name('start');
+        Route::post('/{testId}/submit', [\App\Http\Controllers\Seeker\MsdtController::class, 'submitTest'])->name('submit');
+        Route::get('/{application}/completed', [\App\Http\Controllers\Seeker\MsdtController::class, 'showCompleted'])->name('completed');
+    });
+
+    // Papi Kostick Test (Baru)
+    Route::prefix('papi-test')->name('papi.')->group(function () {
+        Route::get('/{application}/instructions', [\App\Http\Controllers\Seeker\PapiController::class, 'showInstructions'])->name('instructions');
+        Route::get('/{application}/start', [\App\Http\Controllers\Seeker\PapiController::class, 'startTest'])->name('start');
+        Route::post('/{testId}/submit', [\App\Http\Controllers\Seeker\PapiController::class, 'submitTest'])->name('submit');
+        Route::get('/{application}/completed', [\App\Http\Controllers\Seeker\PapiController::class, 'showCompleted'])->name('completed');
+    });
 });

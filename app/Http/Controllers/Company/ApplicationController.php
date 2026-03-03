@@ -25,14 +25,15 @@ class ApplicationController extends Controller
     {
         $this->authorizeAccess($application);
         $application->load([
-        'job', 
-        'kraepelinTest', 
-        'user.seekerProfile.experiences', 
-        'user.seekerProfile.educations', 
-        'user.seekerProfile.skills'
-    ]);
-    
-    return view('company.applications.show', compact('application'));
+            'job',
+            'kraepelinTest',
+            'psychologicalResults',
+            'user.seekerProfile.experiences',
+            'user.seekerProfile.educations',
+            'user.seekerProfile.skills'
+        ]);
+
+        return view('company.applications.show', compact('application'));
     }
 
 
@@ -55,7 +56,6 @@ class ApplicationController extends Controller
                 'message' => 'Status berhasil diperbarui ke ' . $application->status_label,
                 'data' => $application
             ], 200);
-
         } catch (\Exception $e) {
             // Jika ada error, kembalikan status 422 atau 500
             return response()->json([
@@ -76,23 +76,48 @@ class ApplicationController extends Controller
         return Storage::disk('public')->download($application->cv_path);
     }
 
-public function downloadCover(JobApplication $application)
-{
-    // 1. Tambahkan proteksi akses agar perusahaan lain tidak bisa asal download
-    $this->authorizeAccess($application);
+    public function downloadCover(JobApplication $application)
+    {
+        // 1. Tambahkan proteksi akses agar perusahaan lain tidak bisa asal download
+        $this->authorizeAccess($application);
 
-    // 2. Gunakan disk 'public' agar sama dengan saat file disimpan
-    $path = $application->cover_letter_path;
+        // 2. Gunakan disk 'public' agar sama dengan saat file disimpan
+        $path = $application->cover_letter_path;
 
-    if ($path && Storage::disk('public')->exists($path)) {
-        // 3. Berikan nama file yang rapi saat didownload
-        $filename = str_replace(' ', '_', $application->user->name) . '_Cover_Letter.' . pathinfo($path, PATHINFO_EXTENSION);
-        
-        return Storage::disk('public')->download($path, $filename);
+        if ($path && Storage::disk('public')->exists($path)) {
+            // 3. Berikan nama file yang rapi saat didownload
+            $filename = str_replace(' ', '_', $application->user->name) . '_Cover_Letter.' . pathinfo($path, PATHINFO_EXTENSION);
+
+            return Storage::disk('public')->download($path, $filename);
+        }
+
+        return back()->with('error', 'File Surat Lamaran tidak ditemukan di server.');
     }
-    
-    return back()->with('error', 'File Surat Lamaran tidak ditemukan di server.');
-}
+
+    public function showPsychologicalResults(JobApplication $application)
+    {
+        $this->authorizeAccess($application);
+
+        // Ambil hasil MSDT dan PAPI terbaru untuk aplikasi ini
+        $msdt = $application->psychologicalResults()->where('test_type', 'msdt')->latest()->first();
+        $papi = $application->psychologicalResults()->where('test_type', 'papi')->latest()->first();
+
+        return view('company.applications.psychological_results', compact('application', 'msdt', 'papi'));
+    }
+
+    public function downloadPsychologicalPdf(JobApplication $application)
+    {
+        $this->authorizeAccess($application);
+
+        $msdt = $application->psychologicalResults()->where('test_type', 'msdt')->latest()->first();
+        $papi = $application->psychologicalResults()->where('test_type', 'papi')->latest()->first();
+
+        // Logika DomPDF (Contoh)
+        // $pdf = \PDF::loadView('company.applications.psychological_pdf', compact('application', 'msdt', 'papi'));
+        // return $pdf->download('Hasil_Psikotes_' . $application->user->name . '.pdf');
+
+        return back()->with('info', 'Fitur PDF sedang disiapkan.');
+    }
 
     private function authorizeAccess(JobApplication $application)
     {

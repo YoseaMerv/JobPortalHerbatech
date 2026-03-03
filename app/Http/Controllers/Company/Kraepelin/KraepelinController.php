@@ -49,7 +49,7 @@ class KraepelinController extends Controller
         if (!$test) {
             // Reset tes lama jika ada kebocoran data
             KraepelinTest::where('job_application_id', $application->id)->delete();
-            
+
             $application->update(['status' => JobApplication::STATUS_TEST_IN_PROGRESS]);
 
             // Generate 50 Kolom x 40 Baris (Standar Industri)
@@ -70,6 +70,20 @@ class KraepelinController extends Controller
         }
 
         return view('seeker.kraepelin.test', compact('application', 'test'));
+    }
+
+    private function checkAndUpgradeStatus($application)
+    {
+        // Kraepelin dianggap selesai jika recordnya ada dan completed_at tidak null
+        $kraepelinDone = $application->kraepelinTest()->whereNotNull('completed_at')->exists();
+
+        // MSDT & PAPI dari tabel psychological_test_results
+        $msdtDone = $application->psychologicalResults()->where('test_type', 'msdt')->where('status', 'completed')->exists();
+        $papiDone = $application->psychologicalResults()->where('test_type', 'papi')->where('status', 'completed')->exists();
+
+        if ($kraepelinDone && $msdtDone && $papiDone) {
+            $application->update(['status' => JobApplication::STATUS_TEST_COMPLETED]);
+        }
     }
 
     /**
@@ -104,7 +118,7 @@ class KraepelinController extends Controller
                     $key = "{$colIndex}-{$r}";
                     if (isset($userAnswers[$key]) && $userAnswers[$key] !== "") {
                         $maxRowFilled = $r;
-                        break; 
+                        break;
                     }
                 }
 
@@ -131,7 +145,7 @@ class KraepelinController extends Controller
 
             // 3. Hitung Indikator Utama
             $totalCols = count($resultsPerColumn);
-            
+
             // PANKER (Kecepatan)
             $panker = array_sum($resultsPerColumn) / $totalCols;
 
@@ -164,14 +178,13 @@ class KraepelinController extends Controller
                 'completed_at' => now(),
             ]);
 
-            $test->jobApplication->update(['status' => JobApplication::STATUS_TEST_COMPLETED]);
+            $this->checkAndUpgradeStatus($test->jobApplication);
 
             DB::commit();
             return response()->json([
                 'status' => 'success',
                 'redirect' => route('seeker.kraepelin.completed', $test->job_application_id)
             ]);
-
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error("Kraepelin Submit Error: " . $e->getMessage());

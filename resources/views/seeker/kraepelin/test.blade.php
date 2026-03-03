@@ -170,7 +170,7 @@
     const submitUrl = "{{ route('seeker.kraepelin.submit', ':testId') }}".replace(':testId', testId);
     
     let currentCol = 0;
-    let columnTimeLimit =30; // 30 detik per kolom
+    let columnTimeLimit =1; // 30 detik per kolom
     let timerInterval;
     let isSubmitting = false;
     let allAnswers = {};
