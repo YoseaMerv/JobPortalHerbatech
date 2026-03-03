@@ -56,22 +56,17 @@ class JobApplication extends Model
         // Cek Kraepelin
         $kraepelin = $this->kraepelinTest()->whereNotNull('completed_at')->exists();
 
-        // Cek MSDT
-        $msdt = $this->psychologicalResults()
-            ->where('test_type', 'msdt')
+        // Cek MSDT & PAPI
+        $results = $this->psychologicalResults()
             ->where('status', 'completed')
-            ->exists();
+            ->pluck('test_type')
+            ->toArray();
 
-        // Cek PAPI
-        $papi = $this->psychologicalResults()
-            ->where('test_type', 'papi')
-            ->where('status', 'completed')
-            ->exists();
+        $msdtDone = in_array('msdt', $results);
+        $papiDone = in_array('papi', $results);
 
-        // Harus ketiganya TRUE
-        return $kraepelin && $msdt && $papi;
+        return $kraepelin && $msdtDone && $papiDone;
     }
-
     // --- RELATIONSHIPS ---
 
     public function kraepelinTest()

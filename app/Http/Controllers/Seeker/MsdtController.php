@@ -48,23 +48,29 @@ class MsdtController extends Controller
             'interpretation' => $analysis['interpretation']
         ]);
 
-        // CEK LOGIKA SELESAI SEMUA TES
-        $application = $testResult->jobApplication;
-        if ($application->allTestsCompleted()) {
-            $application->update(['status' => JobApplication::STATUS_TEST_COMPLETED]);
-        }
+        // PERBAIKAN: Hapus pengecekan manual (if allTestsCompleted) 
+        // Ganti dengan memanggil fungsi privat yang sudah ada refresh-nya
+        $this->checkAndUpgradeStatus($testResult->jobApplication);
 
         return redirect()->route('seeker.msdt.completed', $testResult->job_application_id);
     }
 
     private function checkAndUpgradeStatus($application)
     {
+        // 1. Ambil data terbaru dari database (PENTING)
+        $application->refresh();
+
+        // 2. Cek apakah ketiga tes sudah ada record selesainya
         $kraepelinDone = $application->kraepelinTest()->whereNotNull('completed_at')->exists();
         $msdtDone = $application->psychologicalResults()->where('test_type', 'msdt')->where('status', 'completed')->exists();
         $papiDone = $application->psychologicalResults()->where('test_type', 'papi')->where('status', 'completed')->exists();
 
+        // 3. Update status lamaran
         if ($kraepelinDone && $msdtDone && $papiDone) {
             $application->update(['status' => JobApplication::STATUS_TEST_COMPLETED]);
+        } else {
+            // Jika salah satu belum selesai, pastikan status TIDAK MENJADI test_completed
+            $application->update(['status' => JobApplication::STATUS_TEST_IN_PROGRESS]);
         }
     }
 

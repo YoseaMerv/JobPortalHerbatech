@@ -55,12 +55,19 @@ class PapiController extends Controller
 
     private function checkAndUpgradeStatus($application)
     {
+        // 1. Refresh data lamaran agar record tes terbaru terbaca oleh memori PHP
+        $application->refresh();
+
         $kraepelinDone = $application->kraepelinTest()->whereNotNull('completed_at')->exists();
         $msdtDone = $application->psychologicalResults()->where('test_type', 'msdt')->where('status', 'completed')->exists();
         $papiDone = $application->psychologicalResults()->where('test_type', 'papi')->where('status', 'completed')->exists();
 
+        // 2. Hanya jika KETIGANYA selesai, ubah status ke COMPLETED
         if ($kraepelinDone && $msdtDone && $papiDone) {
             $application->update(['status' => JobApplication::STATUS_TEST_COMPLETED]);
+        } else {
+            // Tambahan: Pastikan status tetap IN_PROGRESS jika belum semua selesai
+            $application->update(['status' => JobApplication::STATUS_TEST_IN_PROGRESS]);
         }
     }
 

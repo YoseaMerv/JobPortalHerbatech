@@ -84,6 +84,16 @@ class KraepelinController extends Controller
         if ($kraepelinDone && $msdtDone && $papiDone) {
             $application->update(['status' => JobApplication::STATUS_TEST_COMPLETED]);
         }
+
+        $application->refresh(); // Ambil data terbaru dari database (PENTING!)
+
+        $kraepelinDone = $application->kraepelinTest()->whereNotNull('completed_at')->exists();
+        $msdtDone = $application->psychologicalResults()->where('test_type', 'msdt')->where('status', 'completed')->exists();
+        $papiDone = $application->psychologicalResults()->where('test_type', 'papi')->where('status', 'completed')->exists();
+
+        if ($kraepelinDone && $msdtDone && $papiDone) {
+            $application->update(['status' => JobApplication::STATUS_TEST_COMPLETED]);
+        }
     }
 
     /**

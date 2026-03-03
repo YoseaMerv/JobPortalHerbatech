@@ -36,13 +36,34 @@
                 <div class="mt-4">
                     <h5 class="fw-bold">Tes Yang Harus Dikerjakan:</h5>
                     <div class="list-group">
-                        <a href="{{ route('seeker.msdt.instructions', $application->id) }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
-                            Management Style Diagnostic Test (MSDT)
-                            <i class="fas fa-chevron-right text-muted"></i>
+                        {{-- Item MSDT --}}
+                        @php
+                        $msdtStatus = $application->psychologicalResults->where('test_type', 'msdt')->first()?->status;
+                        @endphp
+                        <a href="{{ $msdtStatus === 'completed' ? '#' : route('seeker.msdt.instructions', $application->id) }}"
+                            class="list-group-item list-group-item-action d-flex justify-content-between align-items-center {{ $msdtStatus === 'completed' ? 'bg-light text-muted' : '' }}">
+                            <div>
+                                Management Style Diagnostic Test (MSDT)
+                                @if($msdtStatus === 'completed')
+                                <span class="badge bg-success rounded-pill ms-2"><i class="fas fa-check me-1"></i> Selesai</span>
+                                @endif
+                            </div>
+                            <i class="fas {{ $msdtStatus === 'completed' ? 'fa-lock' : 'fa-chevron-right' }}"></i>
                         </a>
-                        <a href="{{ route('seeker.papi.instructions', $application->id) }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
-                            PAPI Kostick Test
-                            <i class="fas fa-chevron-right text-muted"></i>
+
+                        {{-- Item PAPI --}}
+                        @php
+                        $papiStatus = $application->psychologicalResults->where('test_type', 'papi')->first()?->status;
+                        @endphp
+                        <a href="{{ $papiStatus === 'completed' ? '#' : route('seeker.papi.instructions', $application->id) }}"
+                            class="list-group-item list-group-item-action d-flex justify-content-between align-items-center {{ $papiStatus === 'completed' ? 'bg-light text-muted' : '' }}">
+                            <div>
+                                PAPI Kostick Test
+                                @if($papiStatus === 'completed')
+                                <span class="badge bg-success rounded-pill ms-2"><i class="fas fa-check me-1"></i> Selesai</span>
+                                @endif
+                            </div>
+                            <i class="fas {{ $papiStatus === 'completed' ? 'fa-lock' : 'fa-chevron-right' }}"></i>
                         </a>
                     </div>
                 </div>
