@@ -74,19 +74,50 @@ class PapiController extends Controller
 
     private function calculatePapiScore($answers)
     {
-        $questions = PsychologicalQuestion::papi()->get()->keyBy('question_number');
-        $finalScores = ['G' => 0, 'L' => 0, 'I' => 0, 'T' => 0, 'V' => 0, 'S' => 0, 'R' => 0, 'D' => 0, 'C' => 0, 'E' => 0, 'N' => 0, 'A' => 0, 'P' => 0, 'X' => 0, 'B' => 0, 'O' => 0, 'Z' => 0, 'K' => 0, 'F' => 0, 'W' => 0];
+        // 20 Dimensi PAPI Kostick
+        $finalScores = [
+            'G' => 0,
+            'L' => 0,
+            'I' => 0,
+            'T' => 0,
+            'V' => 0,
+            'S' => 0,
+            'R' => 0,
+            'D' => 0,
+            'C' => 0,
+            'E' => 0, // Peran (Role)
+            'N' => 0,
+            'A' => 0,
+            'P' => 0,
+            'X' => 0,
+            'B' => 0,
+            'O' => 0,
+            'Z' => 0,
+            'K' => 0,
+            'F' => 0,
+            'W' => 0  // Kebutuhan (Need)
+        ];
+
         if (!$answers) return $finalScores;
+
+        // Ambil mapping dimensi dari database soal
+        $questions = PsychologicalQuestion::where('test_type', 'papi')->get()->keyBy('question_number');
+
         foreach ($answers as $num => $choice) {
             if (!isset($questions[$num])) continue;
-            $dim = ($choice == 'a') ? $questions[$num]->dimension_a : $questions[$num]->dimension_b;
-            if ($dim && isset($finalScores[$dim])) {
-                $finalScores[$dim]++;
+
+            // Jika user pilih A (Panah Horizontal), tambah skor untuk Dimensi A
+            // Jika user pilih B (Panah Diagonal), tambah skor untuk Dimensi B
+            $dimension = ($choice === 'a') ? $questions[$num]->dimension_a : $questions[$num]->dimension_b;
+
+            if ($dimension && isset($finalScores[$dimension])) {
+                $finalScores[$dimension]++;
             }
         }
+
         return $finalScores;
     }
-
+    
     public function showCompleted(JobApplication $application)
     {
         return view('seeker.psychological_completed', compact('application'));

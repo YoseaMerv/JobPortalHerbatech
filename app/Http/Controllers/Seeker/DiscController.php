@@ -60,31 +60,33 @@ class DiscController extends Controller
 
     private function calculateDiscScore($answers)
     {
-        // Inisialisasi skor D, I, S, C untuk P (Most) dan K (Least)
         $scoreP = ['D' => 0, 'I' => 0, 'S' => 0, 'C' => 0, 'X' => 0];
         $scoreK = ['D' => 0, 'I' => 0, 'S' => 0, 'C' => 0, 'X' => 0];
 
-        // Ambil kunci jawaban dari database soal
         $questions = PsychologicalQuestion::where('test_type', 'disc')->get()->keyBy('question_number');
+
+        if (!$answers) return ['totals' => ['D' => 0, 'I' => 0, 'S' => 0, 'C' => 0], 'interpretation' => 'Data jawaban kosong'];
 
         foreach ($answers as $num => $choice) {
             if (!isset($questions[$num])) continue;
 
-            // $choice['p'] adalah pilihan baris (1-4) untuk kolom P
-            // $choice['k'] adalah pilihan baris (1-4) untuk kolom K
-
-            $mappingP = json_decode($questions[$num]->dimension_p, true); // Contoh isi: [1=>'D', 2=>'I', 3=>'S', 4=>'C']
+            $mappingP = json_decode($questions[$num]->dimension_p, true);
             $mappingK = json_decode($questions[$num]->dimension_k, true);
 
-            if (isset($choice['p']) && isset($mappingP[$choice['p']])) {
-                $scoreP[$mappingP[$choice['p']]]++;
+            // Menghitung P (Paling)
+            if (isset($choice['p'])) {
+                $valP = $mappingP[$choice['p']] ?? 'X';
+                if (isset($scoreP[$valP])) $scoreP[$valP]++;
             }
-            if (isset($choice['k']) && isset($mappingK[$choice['k']])) {
-                $scoreK[$mappingK[$choice['k']]]++;
+
+            // Menghitung K (Paling Tidak Menggambarkan Diri)
+            if (isset($choice['k'])) {
+                $valK = $mappingK[$choice['k']] ?? 'X';
+                if (isset($scoreK[$valK])) $scoreK[$valK]++;
             }
         }
 
-        // Skor Akhir = P - K
+        // Skor Akhir: Selisih antara Paling dan PALING TIDAK MENGGAMBARKAN DIRI 
         $totals = [
             'D' => $scoreP['D'] - $scoreK['D'],
             'I' => $scoreP['I'] - $scoreK['I'],
@@ -94,7 +96,7 @@ class DiscController extends Controller
 
         return [
             'totals' => $totals,
-            'interpretation' => "Analisis kepribadian DISC telah berhasil dikalkulasi berdasarkan 24 indikator perilaku."
+            'interpretation' => "Analisis DISC telah diperbarui dengan profil skor: D=" . $totals['D'] . ", I=" . $totals['I'] . ", S=" . $totals['S'] . ", C=" . $totals['C']
         ];
     }
 
