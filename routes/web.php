@@ -170,7 +170,10 @@ Route::prefix('seeker')->name('seeker.')->middleware(['auth', 'verified', 'role:
         Route::get('/{application}/start', [\App\Http\Controllers\Seeker\MsdtController::class, 'startTest'])->name('start');
         Route::post('/{testId}/submit', [\App\Http\Controllers\Seeker\MsdtController::class, 'submitTest'])->name('submit');
         Route::get('/{application}/completed', [\App\Http\Controllers\Seeker\MsdtController::class, 'showCompleted'])->name('completed');
+
+        Route::post('/{testId}/autosave', [\App\Http\Controllers\Seeker\MsdtController::class, 'autoSave'])->name('autosave');
     });
+
 
     // Papi Kostick Test (Baru)
     Route::prefix('papi-test')->name('papi.')->group(function () {
@@ -178,6 +181,8 @@ Route::prefix('seeker')->name('seeker.')->middleware(['auth', 'verified', 'role:
         Route::get('/{application}/start', [\App\Http\Controllers\Seeker\PapiController::class, 'startTest'])->name('start');
         Route::post('/{testId}/submit', [\App\Http\Controllers\Seeker\PapiController::class, 'submitTest'])->name('submit');
         Route::get('/{application}/completed', [\App\Http\Controllers\Seeker\PapiController::class, 'showCompleted'])->name('completed');
+
+        Route::post('/{testId}/autosave', [\App\Http\Controllers\Seeker\PapiController::class, 'autoSave'])->name('autosave');
     });
 
     Route::prefix('disc-test')->name('disc.')->group(function () {
@@ -185,5 +190,7 @@ Route::prefix('seeker')->name('seeker.')->middleware(['auth', 'verified', 'role:
         Route::get('/{application}/start', [\App\Http\Controllers\Seeker\DiscController::class, 'startTest'])->name('start');
         Route::post('/{testId}/submit', [\App\Http\Controllers\Seeker\DiscController::class, 'submitTest'])->name('submit');
         Route::get('/{application}/completed', [\App\Http\Controllers\Seeker\DiscController::class, 'showCompleted'])->name('completed');
+
+        Route::post('/{testId}/autosave', [\App\Http\Controllers\Seeker\DiscController::class, 'autoSave'])->name('autosave');
     });
 });

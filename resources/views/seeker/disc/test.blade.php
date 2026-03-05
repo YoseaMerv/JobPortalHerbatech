@@ -74,7 +74,12 @@
     <div class="container py-3">
         <div class="d-flex justify-content-between align-items-center mb-2">
             <div>
-                <h5 class="fw-bold mb-0 text-primary">Psikotes D.I.S.C.</h5>
+                <div class="d-flex align-items-center">
+                    <h5 class="fw-bold mb-0 text-primary me-3">Psikotes D.I.S.C.</h5>
+                    <span id="save-indicator" class="badge bg-success bg-opacity-10 text-success" style="opacity: 0; transition: opacity 0.5s;">
+                        <i class="fas fa-check-circle me-1"></i> Tersimpan
+                    </span>
+                </div>
                 <span class="text-muted extra-small" id="progress-text">0 / 24 Soal Terisi</span>
             </div>
             {{-- BAGIAN TIMER --}}
@@ -139,21 +144,49 @@
 </div>
 
 @push('scripts')
+
 <script>
+    const storageKey = 'disc_answers_{{ $testResult->id }}';
+    const discForm = document.getElementById('discForm');
+
+
+    // --- 1. FITUR AUTO-SAVE (LOCAL STORAGE) ---
+    function restoreAnswers() {
+        const savedData = localStorage.getItem(storageKey);
+        if (savedData) {
+            const answers = JSON.parse(savedData);
+            for (const key in answers) {
+                const radio = document.querySelector(`input[name="${key}"][value="${answers[key]}"]`);
+                if (radio) radio.checked = true;
+            }
+            updateProgress(); // Perbarui progress bar setelah jawaban dimuat
+        }
+    }
+
+    // Panggil saat halaman pertama kali dimuat
+    document.addEventListener('DOMContentLoaded', restoreAnswers);
+
+    // --- 2. LOGIKA PILIHAN & PROGRESS ---
     document.addEventListener('change', function(e) {
         if (e.target.classList.contains('disc-input')) {
             const no = e.target.dataset.no;
             const row = e.target.dataset.row;
             const isP = e.target.name.includes('[p]');
-
             const oppositeType = isP ? 'k' : 'p';
             const oppositeRadio = document.querySelector(`input[name="answers[${no}][${oppositeType}]"][data-row="${row}"]`);
 
+            // Validasi P dan K tidak boleh sama
             if (e.target.checked && oppositeRadio && oppositeRadio.checked) {
                 alert('Peringatan: Pernyataan yang sama tidak boleh dipilih untuk P dan K!');
                 e.target.checked = false;
                 return;
             }
+
+            // Simpan otomatis ke Local Storage
+            let savedData = JSON.parse(localStorage.getItem(storageKey) || '{}');
+            savedData[e.target.name] = e.target.value;
+            localStorage.setItem(storageKey, JSON.stringify(savedData));
+
             updateProgress();
         }
     });
@@ -164,55 +197,83 @@
             if (document.querySelector(`input[name="answers[${i}][p]"]:checked`) &&
                 document.querySelector(`input[name="answers[${i}][k]"]:checked`)) done++;
         }
-        document.getElementById('progBar').style.width = (done / 24 * 100) + '%';
-        document.getElementById('progText').innerText = `${done} / 24 Selesai`;
+        const progressBar = document.getElementById('progress-bar');
+        const progressText = document.getElementById('progress-text');
+        if (progressBar) progressBar.style.width = (done / 24 * 100) + '%';
+        if (progressText) progressText.innerText = `${done} / 24 Soal Terisi`;
     }
-</script>
-<script>
-    // Konfigurasi Waktu (Dalam Menit)
-    // DISC: 15, MSDT: 30, PAPI: 30
-    const durationInMinutes = 15;
-    let timeInSeconds = durationInMinutes * 60;
 
+    // --- 3. LOGIKA TIMER DARI SERVER ---
+    let timeInSeconds = parseInt('{{ $remainingSeconds > 0 ? $remainingSeconds : 0 }}');
+    if (isNaN(timeInSeconds)) timeInSeconds = 0;
     const timerDisplay = document.getElementById('timer-display');
-    const discForm = document.getElementById('discForm');
 
-    const countdown = setInterval(function() {
-        let minutes = Math.floor(timeInSeconds / 60);
-        let seconds = timeInSeconds % 60;
-
-        // Format tampilan 00:00
-        seconds = seconds < 10 ? '0' + seconds : seconds;
-        minutes = minutes < 10 ? '0' + minutes : minutes;
-
-        timerDisplay.innerHTML = `${minutes}:${seconds}`;
-
-        if (timeInSeconds <= 0) {
-            clearInterval(countdown);
+    // === TAMBAHKAN FUNGSI DETEKSI OFFLINE DI SINI ===
+    function forceSubmit() {
+        if (navigator.onLine) {
+            localStorage.removeItem(storageKey);
             alert("Waktu habis! Jawaban Anda akan dikirim secara otomatis.");
-            // Matikan pengecekan validasi saat auto-submit agar tidak terhalang alert "Belum Lengkap"
             discForm.onsubmit = null;
             discForm.submit();
+        } else {
+            alert("⚠️ KONEKSI TERPUTUS! Waktu sudah habis. Tolong JANGAN tutup/refresh halaman ini. Silakan nyalakan kembali internet Anda. Sistem akan otomatis mengirim jawaban jika koneksi sudah pulih.");
+
+            // Cek setiap 3 detik apakah internet sudah nyala
+            const retry = setInterval(function() {
+                if (navigator.onLine) {
+                    clearInterval(retry);
+                    localStorage.removeItem(storageKey);
+                    alert("✅ Koneksi pulih! Mengirim jawaban sekarang...");
+                    discForm.onsubmit = null;
+                    discForm.submit();
+                }
+            }, 3000);
+        }
+    }
+    // ===============================================
+
+    if (timeInSeconds <= 0) {
+        forceSubmit();
+    } else {
+        const countdown = setInterval(function() {
+            let minutes = Math.floor(timeInSeconds / 60);
+            let seconds = timeInSeconds % 60;
+
+            seconds = seconds < 10 ? '0' + seconds : seconds;
+            minutes = minutes < 10 ? '0' + minutes : minutes;
+            timerDisplay.innerHTML = `${minutes}:${seconds}`;
+
+            if (timeInSeconds <= 0) {
+                clearInterval(countdown);
+                forceSubmit(); // Panggil fungsi offline/online
+            }
+
+            if (timeInSeconds <= 60) {
+                timerDisplay.classList.add('text-blink');
+            }
+            timeInSeconds--;
+        }, 1000);
+    }
+
+    // Bersihkan storage & cegah double submit ketika tombol diklik manual
+    discForm.addEventListener('submit', function(e) {
+        if (!navigator.onLine) {
+            e.preventDefault(); // Hentikan submit jika offline
+            alert("Koneksi internet Anda sedang terputus! Nyalakan internet terlebih dahulu untuk mengirim jawaban.");
+            return;
         }
 
-        // Beri warna merah berkedip jika waktu sisa 1 menit
-        if (timeInSeconds <= 60) {
-            timerDisplay.classList.add('text-blink');
+        localStorage.removeItem(storageKey);
+        const btn = this.querySelector('button[type="submit"]');
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = 'Menyimpan... <i class="fas fa-spinner fa-spin ms-2"></i>';
         }
+    });
 
-        timeInSeconds--;
-    }, 1000);
-
-    // Tambahkan CSS sederhana untuk efek berkedip
+    // CSS berkedip
     const style = document.createElement('style');
-    style.innerHTML = `
-        .text-blink {
-            animation: blinker 1s linear infinite;
-        }
-        @keyframes blinker {
-            50% { opacity: 0; }
-        }
-    `;
+    style.innerHTML = `.text-blink { animation: blinker 1s linear infinite; } @keyframes blinker { 50% { opacity: 0; } }`;
     document.head.appendChild(style);
 </script>
 @endpush

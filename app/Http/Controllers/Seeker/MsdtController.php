@@ -29,10 +29,17 @@ class MsdtController extends Controller
             'started_at' => Carbon::now(),
         ]);
 
+        // === TAMBAHKAN LOGIKA WAKTU INI ===
+        $durationInMinutes = 30; // Durasi tes MSDT (30 Menit)
+        $endTime = \Carbon\Carbon::parse($testResult->started_at)->addMinutes($durationInMinutes);
+        $remainingSeconds = \Carbon\Carbon::now()->diffInSeconds($endTime, false);
+        // ==================================
+
         // Update status lamaran ke sedang mengerjakan
         $application->update(['status' => JobApplication::STATUS_TEST_IN_PROGRESS]);
 
-        return view('seeker.msdt.test', compact('application', 'questions', 'testResult'));
+        // Lempar variabel remainingSeconds ke view
+        return view('seeker.msdt.test', compact('application', 'questions', 'testResult', 'remainingSeconds'));
     }
 
     public function submitTest(Request $request, $testId)
@@ -53,6 +60,23 @@ class MsdtController extends Controller
         $this->checkAndUpgradeStatus($testResult->jobApplication);
 
         return redirect()->route('seeker.msdt.completed', $testResult->job_application_id);
+    }
+
+    public function autoSave(Request $request, $testId)
+    {
+        $testResult = \App\Models\PsychologicalTestResult::find($testId);
+
+        // Pastikan tes ditemukan dan belum berstatus completed
+        if ($testResult && $testResult->status !== 'completed') {
+            // Update HANYA kolom answers saja, status tetap in_progress
+            $testResult->update([
+                'answers' => $request->answers
+            ]);
+
+            return response()->json(['status' => 'success', 'message' => 'Draft tersimpan di database']);
+        }
+
+        return response()->json(['status' => 'error', 'message' => 'Tes tidak valid atau sudah selesai'], 400);
     }
 
     private function checkAndUpgradeStatus($application)

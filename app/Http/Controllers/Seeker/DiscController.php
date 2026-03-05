@@ -29,12 +29,19 @@ class DiscController extends Controller
             'test_type' => 'disc',
         ], [
             'status' => 'in_progress',
-            'started_at' => Carbon::now(),
+            'started_at' => \Carbon\Carbon::now(),
         ]);
+
+        // === TAMBAHKAN LOGIKA WAKTU INI ===
+        $durationInMinutes = 15; // Durasi tes D.I.S.C
+        $endTime = \Carbon\Carbon::parse($testResult->started_at)->addMinutes($durationInMinutes);
+        $remainingSeconds = \Carbon\Carbon::now()->diffInSeconds($endTime, false);
+        // ==================================
 
         $application->update(['status' => JobApplication::STATUS_TEST_IN_PROGRESS]);
 
-        return view('seeker.disc.test', compact('application', 'questions', 'testResult'));
+        // === PERHATIKAN BARIS INI: Tambahkan 'remainingSeconds' di dalam compact ===
+        return view('seeker.disc.test', compact('application', 'questions', 'testResult', 'remainingSeconds'));
     }
 
     public function submitTest(Request $request, $testId)
@@ -56,6 +63,23 @@ class DiscController extends Controller
         $this->checkAndUpgradeStatus($testResult->jobApplication);
 
         return redirect()->route('seeker.disc.completed', $testResult->job_application_id);
+    }
+
+    public function autoSave(Request $request, $testId)
+    {
+        $testResult = \App\Models\PsychologicalTestResult::find($testId);
+
+        // Pastikan tes ditemukan dan belum berstatus completed
+        if ($testResult && $testResult->status !== 'completed') {
+            // Update HANYA kolom answers saja, status tetap in_progress
+            $testResult->update([
+                'answers' => $request->answers
+            ]);
+
+            return response()->json(['status' => 'success', 'message' => 'Draft tersimpan di database']);
+        }
+
+        return response()->json(['status' => 'error', 'message' => 'Tes tidak valid atau sudah selesai'], 400);
     }
 
     private function calculateDiscScore($answers)
