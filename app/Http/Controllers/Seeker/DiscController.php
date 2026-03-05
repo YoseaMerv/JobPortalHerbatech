@@ -18,7 +18,6 @@ class DiscController extends Controller
 
     public function startTest(JobApplication $application)
     {
-        // Pastikan scope disc() sudah ada di model PsychologicalQuestion
         $questions = PsychologicalQuestion::where('test_type', 'disc')
             ->orderBy('question_number')
             ->get();
@@ -41,15 +40,18 @@ class DiscController extends Controller
     {
         $testResult = PsychologicalTestResult::findOrFail($testId);
 
-        // Validasi: Pastikan semua 24 soal diisi P dan K nya
         // Logic hitung skor
         $analysis = $this->calculateDiscScore($request->answers);
 
         $testResult->update([
-            'answers' => $request->answers,
+            // Tidak perlu json_encode karena di Model sudah di-cast sebagai 'array'
+            'answers' => $request->answers, 
             'status' => 'completed',
             'completed_at' => Carbon::now(),
+            
+            // KEMBALIKAN KE final_score (Sesuai dengan Database)
             'final_score' => $analysis['totals'],
+            
             'interpretation' => $analysis['interpretation']
         ]);
 
@@ -58,45 +60,71 @@ class DiscController extends Controller
         return redirect()->route('seeker.disc.completed', $testResult->job_application_id);
     }
 
-    private function calculateDiscScore($answers)
+private function calculateDiscScore($answers)
     {
-        $scoreP = ['D' => 0, 'I' => 0, 'S' => 0, 'C' => 0, 'X' => 0];
-        $scoreK = ['D' => 0, 'I' => 0, 'S' => 0, 'C' => 0, 'X' => 0];
+        // 1. Inisialisasi Skor Mentah (Raw Score)
+        $scoreP = ['D' => 0, 'I' => 0, 'S' => 0, 'C' => 0, '*' => 0]; // * = Invalid/Bintang
+        $scoreK = ['D' => 0, 'I' => 0, 'S' => 0, 'C' => 0, '*' => 0];
 
         $questions = PsychologicalQuestion::where('test_type', 'disc')->get()->keyBy('question_number');
 
-        if (!$answers) return ['totals' => ['D' => 0, 'I' => 0, 'S' => 0, 'C' => 0], 'interpretation' => 'Data jawaban kosong'];
+        if (!$answers) {
+            return ['totals' => ['D' => 0, 'I' => 0, 'S' => 0, 'C' => 0], 'interpretation' => 'Data jawaban kosong'];
+        }
 
+        // 2. Hitung Jawaban (Scoring)
         foreach ($answers as $num => $choice) {
             if (!isset($questions[$num])) continue;
 
             $mappingP = json_decode($questions[$num]->dimension_p, true);
             $mappingK = json_decode($questions[$num]->dimension_k, true);
 
-            // Menghitung P (Paling)
+            // Hitung Most (Paling Menggambarkan - P)
             if (isset($choice['p'])) {
-                $valP = $mappingP[$choice['p']] ?? 'X';
+                $valP = $mappingP[$choice['p']] ?? '*';
                 if (isset($scoreP[$valP])) $scoreP[$valP]++;
             }
 
-            // Menghitung K (Paling Tidak Menggambarkan Diri)
+            // Hitung Least (Paling Tidak Menggambarkan - K)
             if (isset($choice['k'])) {
-                $valK = $mappingK[$choice['k']] ?? 'X';
+                $valK = $mappingK[$choice['k']] ?? '*';
                 if (isset($scoreK[$valK])) $scoreK[$valK]++;
             }
         }
 
-        // Skor Akhir: Selisih antara Paling dan PALING TIDAK MENGGAMBARKAN DIRI 
-        $totals = [
+        // 3. Hitung Selisih (Graph 3 - Composite / Synthesis)
+        // Rumus Asli: P - K
+        // Hasilnya bisa minus (contoh: D Most = 2, D Least = 10, maka Change = -8)
+        $rawChange = [
             'D' => $scoreP['D'] - $scoreK['D'],
             'I' => $scoreP['I'] - $scoreK['I'],
             'S' => $scoreP['S'] - $scoreK['S'],
             'C' => $scoreP['C'] - $scoreK['C'],
         ];
 
+        // 4. Konversi ke Skala DISC (0 - 40) Menggunakan Interpolasi
+        // Di tes DISC standar (24 soal), rentang maksimal untuk P-K secara teoritis adalah -24 sampai +24.
+        // Namun, dalam kenyataannya, sangat jarang (hampir mustahil) seseorang mendapat skor ekstrim murni +24 atau -24 di satu faktor.
+        // Rentang wajar (norma) biasanya berada di kisaran -15 (sangat rendah) hingga +15 (sangat tinggi).
+        
+        $totals = [];
+        foreach ($rawChange as $trait => $score) {
+            // Batasi skor ekstrim (clipping) agar tidak merusak perhitungan
+            $score = max(-15, min(15, $score));
+
+            // Konversi dari rentang [-15, 15] ke rentang [0, 40]
+            // Rumus: ((Score - MinRange) / (MaxRange - MinRange)) * SkalaBaru
+            // ((Score - (-15)) / (15 - (-15))) * 40 => ((Score + 15) / 30) * 40
+            
+            $converted = round((($score + 15) / 30) * 40);
+            
+            // Pastikan tidak ada yang kurang dari 0 atau lebih dari 40
+            $totals[$trait] = (int) max(0, min(40, $converted));
+        }
+
         return [
             'totals' => $totals,
-            'interpretation' => "Analisis DISC telah diperbarui dengan profil skor: D=" . $totals['D'] . ", I=" . $totals['I'] . ", S=" . $totals['S'] . ", C=" . $totals['C']
+            'interpretation' => "Analisis DISC: D=" . $totals['D'] . ", I=" . $totals['I'] . ", S=" . $totals['S'] . ", C=" . $totals['C']
         ];
     }
 

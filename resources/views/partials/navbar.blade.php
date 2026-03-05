@@ -1,4 +1,4 @@
-<nav class="navbar navbar-expand-lg navbar-dark fixed-top" id="mainNav">
+<nav class="navbar navbar-expand-lg navbar-dark fixed-top" id="mainNav" style="z-index: 1050;">
     <div class="container">
         <a class="navbar-brand fw-bold d-flex align-items-center" href="{{ url('/') }}">
             @if(isset($company->company_logo) && $company->company_logo)

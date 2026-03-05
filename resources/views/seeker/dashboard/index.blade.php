@@ -2,10 +2,9 @@
 
 @section('content')
 <div class="row">
-    <div class="col-md-8">
-        <h4 class="mb-4">Selamat datang kembali, {{ Auth::user()->name }}!</h4>
+    <div class="col-md-8">  
 
-        {{-- 1. PINDAHKAN LOGIKA PENGECEKAN KE PALING ATAS --}}
+        {{-- 1. LOGIKA PENGECEKAN --}}
         @php
         $testInvitation = $data['recentApplications']
         ->whereIn('status', ['test_invited', 'test_in_progress'])
@@ -25,7 +24,6 @@
                 <p class="mb-3 small opacity-90">
                     {{ $testInvitation->status === 'test_in_progress' 
                         ? 'Selesaikan tes Anda yang sedang berlangsung agar progres tersimpan.' 
-                        // FIX: Tambahkan null check ?-> pada job
                         : 'Anda terpilih untuk tahap tes pada posisi ' . ($testInvitation->job?->title ?? 'Posisi Terkait') }}
                 </p>
 
@@ -76,8 +74,8 @@
 
         {{-- 4. TABEL AKTIVITAS LAMARAN --}}
         <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px;">
-            <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
-                <h6 class="mb-0 fw-bold text-dark"><i class="fas fa-history me-2 text-primary"></i>Aktivitas Lamaran</h6>
+            <div class="card-header bg-transparent py-3 border-bottom d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-bold text-body"><i class="fas fa-history me-2 text-primary"></i>Aktivitas Lamaran</h6>
                 
                 @if($testInvitation)
                 <a href="{{ route('seeker.kraepelin.instructions', $testInvitation->id) }}"
@@ -94,17 +92,16 @@
                     <table class="table table-hover align-middle mb-0">
                         <thead class="bg-light">
                             <tr>
-                                <th class="ps-4 text-muted small fw-bold text-uppercase py-3">Posisi</th>
-                                <th class="text-muted small fw-bold text-uppercase py-3 text-center">Status</th>
-                                <th class="text-end pe-4 text-muted small fw-bold text-uppercase py-3">Tanggal</th>
+                                <th class="ps-4 text-muted small fw-bold text-uppercase py-3 border-0">Posisi</th>
+                                <th class="text-muted small fw-bold text-uppercase py-3 text-center border-0">Status</th>
+                                <th class="text-end pe-4 text-muted small fw-bold text-uppercase py-3 border-0">Tanggal</th>
                             </tr>
                         </thead>
                         <tbody>
                             @forelse($data['recentApplications'] as $app)
                             <tr>
                                 <td class="ps-4">
-                                    {{-- FIX: Gunakan null-safe operator ?-> dan fallback text --}}
-                                    <div class="fw-bold text-dark" style="font-size: 0.95rem;">{{ $app->job?->title ?? 'Lowongan Telah Dihapus' }}</div>
+                                    <div class="fw-bold text-body" style="font-size: 0.95rem;">{{ $app->job?->title ?? 'Lowongan Telah Dihapus' }}</div>
                                     <div class="text-muted small">{{ $app->job?->company?->company_name ?? 'Perusahaan Tidak Tersedia' }}</div>
                                 </td>
                                 <td class="text-center">
@@ -121,7 +118,7 @@
                                     </span>
                                 </td>
                                 <td class="text-end pe-4 py-3">
-                                    <span class="text-dark fw-medium small">{{ $app->created_at->translatedFormat('d M Y') }}</span>
+                                    <span class="text-body fw-medium small">{{ $app->created_at->translatedFormat('d M Y') }}</span>
                                     <br>
                                     <span class="text-muted extra-small">{{ $app->created_at->diffForHumans() }}</span>
                                 </td>
@@ -146,7 +143,7 @@
             <div class="card-body p-4">
                 <div class="d-flex align-items-center mb-3">
                     <div class="flex-grow-1">
-                        <h6 class="fw-bold text-dark mb-1">Skor Profil Anda</h6>
+                        <h6 class="fw-bold text-body mb-1">Skor Profil Anda</h6>
                         <p class="small text-muted mb-0">Lengkapi untuk dilirik HR</p>
                     </div>
                     <div class="fw-bold h4 text-primary mb-0">{{ $data['profileScore'] }}%</div>
@@ -169,25 +166,31 @@
 
         {{-- Kartu Rekomendasi Kerja --}}
         <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px;">
-            <div class="card-header bg-white py-3 border-bottom">
-                <h6 class="mb-0 fw-bold text-dark"><i class="fas fa-star me-2 text-warning"></i>Rekomendasi Kerja</h6>
+            <div class="card-header bg-transparent py-3 border-bottom">
+                <h6 class="mb-0 fw-bold text-body"><i class="fas fa-star me-2 text-warning"></i>Rekomendasi Kerja</h6>
             </div>
-            <div class="list-group list-group-flush">
+            <div class="list-group list-group-flush rounded-bottom-4">
                 @forelse($featuredJobs as $job)
-                <a href="{{ route('seeker.jobs.show', $job->id) }}" class="list-group-item list-group-item-action p-3 border-0 border-bottom">
+                <a href="{{ route('seeker.jobs.show', $job->id) }}" class="list-group-item list-group-item-action p-3 border-0 border-bottom bg-transparent">
                     <div class="d-flex w-100 justify-content-between mb-1">
-                        {{-- FIX: Null check title --}}
                         <h6 class="mb-0 fw-bold text-indigo" style="font-size: 0.9rem;">{{ Str::limit($job->title ?? 'Judul Lowongan', 25) }}</h6>
                         <small class="text-muted smaller">{{ $job->created_at->diffForHumans() }}</small>
                     </div>
-                    <div class="text-dark small mb-2">{{ $job->company?->company_name ?? 'Perusahaan' }}</div>
+                    {{-- Diubah menjadi text-body agar otomatis putih di dark mode --}}
+                    <div class="text-body small mb-2">{{ $job->company?->company_name ?? 'Perusahaan' }}</div>
+                    
+                    {{-- PERBAIKAN BADGE: Menggunakan bg-opacity-10 yang cantik di Light Mode & elegan di Dark Mode --}}
                     <div class="d-flex gap-2 flex-wrap">
-                        <span class="badge bg-light text-muted fw-normal border" style="font-size: 0.7rem;">{{ $job->location?->name ?? 'Remote' }}</span>
-                        <span class="badge bg-light text-muted fw-normal border" style="font-size: 0.7rem;">{{ ucfirst(str_replace('_', ' ', $job->job_type)) }}</span>
+                        <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 fw-medium px-2 py-1" style="font-size: 0.7rem;">
+                            <i class="fas fa-map-marker-alt me-1"></i> {{ $job->location?->name ?? 'Remote' }}
+                        </span>
+                        <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 fw-medium px-2 py-1" style="font-size: 0.7rem;">
+                            <i class="fas fa-briefcase me-1"></i> {{ ucfirst(str_replace('_', ' ', $job->job_type)) }}
+                        </span>
                     </div>
                 </a>
                 @empty
-                <div class="p-4 text-center text-muted small">Tidak ada lowongan unggulan saat ini.</div>
+                <div class="p-4 text-center text-muted small bg-transparent">Tidak ada lowongan unggulan saat ini.</div>
                 @endforelse
             </div>
         </div>

@@ -1,12 +1,6 @@
 @extends('layouts.admin')
 
 @section('title', 'Pengaturan Perusahaan')
-
-@section('breadcrumb')
-    <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Dashboard</a></li>
-    <li class="breadcrumb-item active">Pengaturan</li>
-@endsection
-
 @section('content')
 <style>
     :root {
@@ -56,7 +50,10 @@
         border-radius: 12px;
         padding: 10px;
         background: var(--slate-50);
-        display: inline-block;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
     }
     .section-title {
         font-size: 1rem;
@@ -84,7 +81,7 @@
     {{-- Tampilkan Pesan Sukses --}}
     @if (session('success'))
         <div class="alert alert-success shadow-sm mb-4" style="border-radius: 12px;">
-            <i class="fas fa-check-circle mr-2"></i> {{ session('success') }}
+            <i class="fas fa-check-circle me-2"></i> {{ session('success') }}
         </div>
     @endif
 
@@ -97,12 +94,12 @@
                         <h4 class="fw-bold mb-1" style="color: var(--text-heading);">Identitas & Branding Portal</h4>
                         <p class="text-muted small mb-0">Kelola tampilan visual dan informasi dasar portal karir HerbaTech.</p>
                     </div>
-                    <div class="bg-soft-primary p-3 rounded-circle" style="background: #eef2ff; color: #4338ca;">
+                    <div class="p-3 rounded-circle" style="background: #eef2ff; color: #4338ca;">
                         <i class="fas fa-cogs fa-lg"></i>
                     </div>
                 </div>
 
-                {{-- FORM START (Hanya ada SATU tag form) --}}
+                {{-- FORM START --}}
                 <form action="{{ route('admin.settings.update') }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     <div class="card-body p-4 p-md-5">
@@ -145,52 +142,65 @@
                                 <div class="section-title mt-5 text-primary">Media Sosial</div>
                                 <div class="row g-3">
                                     <div class="col-md-6 mb-3">
-                                        <label class="form-label-custom"><i class="fab fa-facebook mr-1"></i> Facebook</label>
+                                        <label class="form-label-custom"><i class="fab fa-facebook me-1"></i> Facebook</label>
                                         <input type="url" name="facebook" class="form-control input-style" value="{{ old('facebook', $company->facebook) }}">
                                     </div>
                                     <div class="col-md-6 mb-3">
-                                        <label class="form-label-custom"><i class="fab fa-instagram mr-1"></i> Instagram</label>
+                                        <label class="form-label-custom"><i class="fab fa-instagram me-1"></i> Instagram</label>
                                         <input type="url" name="instagram" class="form-control input-style" value="{{ old('instagram', $company->instagram) }}">
                                     </div>
                                     <div class="col-md-6 mb-3">
-                                        <label class="form-label-custom"><i class="fab fa-linkedin mr-1"></i> LinkedIn</label>
+                                        <label class="form-label-custom"><i class="fab fa-linkedin me-1"></i> LinkedIn</label>
                                         <input type="url" name="linkedin" class="form-control input-style" value="{{ old('linkedin', $company->linkedin) }}">
                                     </div>
                                     <div class="col-md-6 mb-3">
-                                        <label class="form-label-custom"><i class="fab fa-twitter mr-1"></i> Twitter</label>
+                                        <label class="form-label-custom"><i class="fab fa-twitter me-1"></i> Twitter</label>
                                         <input type="url" name="twitter" class="form-control input-style" value="{{ old('twitter', $company->twitter) }}">
                                     </div>
                                 </div>
                             </div>
 
                             {{-- KOLOM KANAN --}}
-                            <div class="col-lg-5 border-left pl-lg-5">
+                            {{-- PERBAIKAN: border-left jadi border-start, pl-lg-5 jadi ps-lg-5 --}}
+                            <div class="col-lg-5 border-start ps-lg-5 mt-4 mt-lg-0">
                                 <div class="section-title">Aset Visual</div>
 
-                                <div class="form-group mb-5">
+                                <div class="form-group mb-4">
                                     <label class="form-label-custom">Logo Perusahaan</label>
-                                    <div class="d-flex align-items-center gap-3">
-                                        <div class="img-preview-box mr-3">
-                                            <img src="{{ $company->company_logo ? asset('storage/' . $company->company_logo) : 'https://placehold.co/80x80' }}" 
-                                                 style="height: 60px; width: 60px; object-fit: contain;">
+                                    <div class="d-flex align-items-center">
+                                        <div class="img-preview-box me-3" style="width: 80px; height: 80px;">
+                                            <img id="logoPreview" src="{{ $company->company_logo ? asset('storage/' . $company->company_logo) : 'https://placehold.co/80x80?text=Logo' }}" 
+                                                 style="max-height: 100%; max-width: 100%; object-fit: contain;">
                                         </div>
-                                        <input type="file" name="company_logo" class="form-control-file border p-1 rounded">
+                                        <input type="file" id="logoInput" name="company_logo" class="form-control-file border p-1 rounded w-100" accept="image/*">
                                     </div>
                                 </div>
 
                                 <div class="form-group mb-5">
                                     <label class="form-label-custom">Favicon</label>
                                     <div class="d-flex align-items-center">
-                                        <div class="img-preview-box mr-3">
-                                            <img src="{{ $company->favicon ? asset('storage/' . $company->favicon) : 'https://placehold.co/32x32' }}" 
-                                                 style="height: 32px; width: 32px;">
+                                        <div class="img-preview-box me-3" style="width: 48px; height: 48px;">
+                                            <img id="faviconPreview" src="{{ $company->favicon ? asset('storage/' . $company->favicon) : 'https://placehold.co/32x32?text=Fav' }}" 
+                                                 style="max-height: 100%; max-width: 100%; object-fit: contain;">
                                         </div>
-                                        <input type="file" name="favicon" class="form-control-file border p-1 rounded">
+                                        <input type="file" id="faviconInput" name="favicon" class="form-control-file border p-1 rounded w-100" accept="image/x-icon,image/png,image/jpeg">
                                     </div>
                                 </div>
 
-                                <div class="bg-light p-4 rounded border">
+                                <div class="bg-light p-4 rounded border mt-3">
                                     <h6 class="fw-bold mb-3">Hero Section (Beranda)</h6>
+                                    
+                                    <div class="form-group mb-3">
+                                        <label class="form-label-custom">Gambar Hero</label>
+                                        <div class="mb-2">
+                                            <div class="img-preview-box w-100 p-0" style="height: 140px;">
+                                                <img id="heroPreview" src="{{ $company->hero_image ? asset('storage/' . $company->hero_image) : 'https://placehold.co/600x300?text=Hero+Image' }}" 
+                                                     style="width: 100%; height: 100%; object-fit: cover;">
+                                            </div>
+                                        </div>
+                                        <input type="file" id="heroInput" name="hero_image" class="form-control-file border p-1 rounded bg-white w-100" accept="image/*">
+                                    </div>
+
                                     <div class="form-group mb-3">
                                         <label class="form-label-custom">Judul Hero</label>
                                         <input type="text" name="hero_title" class="form-control input-style bg-white" 
@@ -205,25 +215,48 @@
                                         <input type="text" name="hero_cta_text" class="form-control input-style bg-white" 
                                                value="{{ old('hero_cta_text', $company->hero_cta_text) }}">
                                     </div>
-                                    <div class="form-group">
-                                        <label class="form-label-custom">Gambar Hero</label>
-                                        <input type="file" name="hero_image" class="form-control-file border p-1 rounded bg-white w-100">
-                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
                     {{-- FOOTER BUTTON --}}
-                    <div class="card-footer bg-white text-right py-4 border-top">
+                    {{-- PERBAIKAN: text-right diganti menjadi text-end agar sesuai dengan Bootstrap 5 --}}
+                    {{-- FOOTER BUTTON --}}
+                    <div class="card-footer bg-white text-end py-4 px-4 px-md-5 border-top" style="border-radius: 0 0 16px 16px;">
                         <button type="submit" class="btn btn-primary px-5 font-weight-bold shadow-sm" style="border-radius: 20px;">
-                            <i class="fas fa-save mr-1"></i> Simpan Semua Perubahan
+                            <i class="fas fa-save mr-2"></i> Simpan Semua Perubahan
                         </button>
-                    </div>
+                    </div>  
                 </form>
                 {{-- FORM END --}}
             </div>
         </div>
     </div>
 </div>
+
+@push('scripts')
+<script>
+    // Fungsi re-usable untuk mengubah sumber gambar preview ketika file di-upload
+    function setupImagePreview(inputId, previewId) {
+        document.getElementById(inputId).addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById(previewId).src = e.target.result;
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+
+    // Inisialisasi event listener setelah DOM selesai dimuat
+    document.addEventListener('DOMContentLoaded', function() {
+        setupImagePreview('logoInput', 'logoPreview');
+        setupImagePreview('faviconInput', 'faviconPreview');
+        setupImagePreview('heroInput', 'heroPreview');
+    });
+</script>
+@endpush
 @endsection

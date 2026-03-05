@@ -8,7 +8,7 @@
         body { 
             font-family: 'Helvetica', Arial, sans-serif; 
             color: #1e293b; 
-            line-height: 1.4; /* Dirapatkan sedikit */
+            line-height: 1.4;
             margin: 0; 
             padding: 0; 
             background-color: #ffffff;
@@ -53,16 +53,22 @@
         }
         .sub-title { font-size: 11px; font-weight: bold; color: #4338ca; margin-bottom: 6px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;}
 
-        /* Metrics Grid (P-T-J-G) */
-        .metrics-table { margin-bottom: 15px; }
-        .metrics-table td { width: 25%; text-align: center; padding: 8px; border: 1px solid #e2e8f0; background: #fff; }
-        .metric-value { font-size: 20px; font-weight: 900; color: #4338ca; line-height: 1; }
-        .metric-label { font-size: 9px; font-weight: bold; color: #334155; text-transform: uppercase; margin-top: 4px; }
-        .metric-desc { font-size: 8px; color: #64748b; margin-top: 2px; }
-        
-        .text-success { color: #166534; }
-        .text-danger { color: #991b1b; }
-        .text-warning { color: #b45309; }
+        /* Text Colors */
+        .text-success { color: #16a34a; }
+        .text-danger { color: #dc2626; }
+        .text-warning { color: #d97706; }
+        .text-info { color: #0284c7; }
+
+        /* Factor Cards (Grid) */
+        .factor-cell { padding: 5px; width: 50%; vertical-align: top; }
+        .factor-card { border: 1px solid #cbd5e1; padding: 10px; background: #f8fafc; border-radius: 4px; }
+        .factor-card.panker { border-left: 4px solid #4338ca; }
+        .factor-card.tianker { border-left: 4px solid #dc2626; }
+        .factor-card.janker { border-left: 4px solid #f59e0b; }
+        .factor-card.ganker { border-left: 4px solid #16a34a; }
+        .factor-title { font-size: 10px; font-weight: bold; color: #334155; }
+        .factor-score { float: right; font-weight: 900; font-size: 11px; }
+        .factor-desc { font-size: 9px; margin-top: 5px; color: #475569; line-height: 1.4; }
 
         /* Progress Bars */
         .progress-wrapper { margin-bottom: 8px; }
@@ -74,25 +80,22 @@
         .bg-primary { background-color: #4338ca; }
         .bg-warning { background-color: #f59e0b; }
 
-        /* Bar Chart (CSS Only for PDF) - DIPERPENDEK & DIRAMPINGKAN */
+        /* Bar Chart (CSS Only for PDF) */
         .chart-table { 
-            width: 85%; /* Tidak full layar agar lebih rapi */
-            height: 80px; /* Tinggi dikurangi dari 120px menjadi 80px */
-            margin: 5px auto 10px auto; /* Margin tengah */
+            width: 60%; /* Kurangi dari 85/80% menjadi 60% agar lebih ramping */
+            margin: 10px auto; 
             border-bottom: 1px solid #94a3b8; 
         }
-        .chart-table td { vertical-align: bottom; text-align: center; width: 20%; padding: 0; border: none; height: 80px; }
-        .bar { background-color: #4338ca; width: 22px; margin: 0 auto; border-radius: 3px 3px 0 0; }
-        .bar-label { font-size: 9px; font-weight: bold; margin-top: 4px; color: #64748b;}
+        .chart-table td { vertical-align: bottom; text-align: center; width: 20%; padding: 0; border: none; height: 60px; }
+        .bar { background-color: #4338ca; width: 20px; margin: 0 auto; border-radius: 3px 3px 0 0; }
+        .bar-label { font-size: 9px; font-weight: bold; margin-top: 5px; color: #64748b;}
 
-        /* Analysis Interpretation */
-        .analysis-box { background: #ffffff; border: 1px solid #e2e8f0; padding: 12px 15px; margin-bottom: 15px; }
-        .analysis-item { margin-bottom: 10px; }
-        .analysis-item:last-child { margin-bottom: 0; }
-        .analysis-text { font-size: 10px; color: #475569; text-align: justify; }
+        /* Summary Box */
+        .summary-box { background: #eff6ff; border: 1px solid #bfdbfe; padding: 12px; margin-bottom: 15px; border-radius: 6px; }
+        .summary-text { font-size: 10px; color: #1e3a8a; text-align: justify; line-height: 1.5; }
 
         /* Final Verdict Banner */
-        .verdict-banner { padding: 12px; text-align: center; margin-top: 15px; border: 2px solid; }
+        .verdict-banner { padding: 12px; text-align: center; margin-top: 15px; border: 2px solid; border-radius: 6px; }
         .fit { background: #f0fdf4; border-color: #22c55e; color: #166534; }
         .marginal { background: #fffbeb; border-color: #f59e0b; color: #92400e; }
         .unfit { background: #fef2f2; border-color: #ef4444; color: #991b1b; }
@@ -137,6 +140,7 @@
         <div class="confidential">DOKUMEN RAHASIA</div>
     </div>
 
+    {{-- INFORMASI KANDIDAT --}}
     <table class="info-table">
         <tr>
             <td class="label">Nama Lengkap</td><td class="value">: {{ $application->user->name }}</td>
@@ -148,38 +152,80 @@
         </tr>
     </table>
 
-    <div class="section-title">A. Analisis Faktor Kraepelin (Performa Tiap Bagian)</div>
-    
-    <table class="metrics-table">
+    {{-- BAGIAN A: RINGKASAN --}}
+    <div class="section-title">A. Ringkasan Evaluasi Sistem</div>
+    <div class="summary-box">
+        <div class="summary-text">
+            Berdasarkan hasil pengerjaan, kandidat memiliki tingkat kecepatan kerja <b>{{ $test->panker >= 15 ? 'tinggi' : ($test->panker >= 10 ? 'sedang / rata-rata' : 'rendah') }}</b> 
+            dengan tingkat ketelitian yang <b>{{ $test->tianker <= 5 ? 'sangat baik (jarang membuat kesalahan)' : ($test->tianker <= 15 ? 'cukup baik' : 'kurang (terburu-buru / ceroboh)') }}</b>. 
+            Stabilitas emosi saat berada di bawah tekanan tergolong <b>{{ $test->janker <= 5 ? 'sangat stabil' : ($test->janker <= 12 ? 'cukup stabil' : 'mudah terpengaruh (fluktuatif)') }}</b>. 
+            Secara keseluruhan, ketahanan kerja (stamina) kandidat menunjukkan tren yang <b>{{ $test->ganker >= 0 ? 'positif (mampu mempertahankan fokus dan ritme)' : 'negatif (rentan mengalami kelelahan pada tugas repetitif)' }}</b>.
+        </div>
+    </div>
+
+    {{-- BAGIAN B: ANALISIS 4 FAKTOR (P-T-J-G) --}}
+    <div class="section-title">B. Analisis Detail 4 Faktor Utama (P-T-J-G)</div>
+    <table style="width: 100%; margin-bottom: 10px; table-layout: fixed;">
         <tr>
-            <td>
-                <div class="metric-value">{{ round($test->panker, 1) }}</div>
-                <div class="metric-label">PANKER (Kecepatan)</div>
-                <div class="metric-desc">Kapasitas energi kerja</div>
+            {{-- PANKER --}}
+            <td class="factor-cell">
+                <div class="factor-card panker">
+                    <div class="factor-title">PK (Kecepatan) <span class="factor-score" style="color:#4338ca;">{{ round($test->panker, 1) }} Baris</span></div>
+                    <div class="factor-desc">
+                        @if($test->panker >= 15) <span class="text-success fw-bold">Sangat Cepat.</span> Kapasitas produksi kerja sangat tinggi.
+                        @elseif($test->panker >= 10) <span class="text-info fw-bold">Rata-rata.</span> Kecepatan kerja standar.
+                        @else <span class="text-danger fw-bold">Lambat.</span> Butuh waktu ekstra untuk menyelesaikan tugas.
+                        @endif
+                    </div>
+                </div>
             </td>
-            <td>
-                <div class="metric-value text-danger">{{ $test->tianker }}</div>
-                <div class="metric-label">TIANKER (Ketelitian)</div>
-                <div class="metric-desc">Kesalahan & kelalaian</div>
+            {{-- TIANKER --}}
+            <td class="factor-cell">
+                <div class="factor-card tianker">
+                    <div class="factor-title">TK (Ketelitian) <span class="factor-score" style="color:#dc2626;">{{ $test->tianker }} Error</span></div>
+                    <div class="factor-desc">
+                        @if($test->tianker <= 5) <span class="text-success fw-bold">Sangat Teliti.</span> Sangat fokus dan akurat.
+                        @elseif($test->tianker <= 20) <span class="text-warning fw-bold">Cukup.</span> Tingkat kesalahan masih batas wajar.
+                        @else <span class="text-danger fw-bold">Kurang Teliti.</span> Cenderung terburu-buru dan ceroboh.
+                        @endif
+                    </div>
+                </div>
             </td>
-            <td>
-                <div class="metric-value text-warning">{{ $test->janker }}</div>
-                <div class="metric-label">JANKER (Irama)</div>
-                <div class="metric-desc">Stabilitas emosi</div>
+        </tr>
+        <tr>
+            {{-- JANKER --}}
+            <td class="factor-cell">
+                <div class="factor-card janker">
+                    <div class="factor-title">JK (Stabilitas) <span class="factor-score" style="color:#f59e0b;">{{ $test->janker }} Poin</span></div>
+                    <div class="factor-desc">
+                        @if($test->janker <= 5) <span class="text-success fw-bold">Sangat Stabil.</span> Kuat menahan tekanan kerja.
+                        @elseif($test->janker <= 12) <span class="text-info fw-bold">Konsisten.</span> Emosi kerja cukup stabil.
+                        @else <span class="text-danger fw-bold">Fluktuatif.</span> Mudah tertekan dan moody dalam bekerja.
+                        @endif
+                    </div>
+                </div>
             </td>
-            <td>
-                <div class="metric-value text-success">{{ ($test->ganker > 0 ? '+' : '') . round($test->ganker, 1) }}</div>
-                <div class="metric-label">GANKER (Ketahanan)</div>
-                <div class="metric-desc">Performa vs kelelahan</div>
+            {{-- GANKER --}}
+            <td class="factor-cell">
+                <div class="factor-card ganker">
+                    <div class="factor-title">GK (Ketahanan) <span class="factor-score" style="color:#16a34a;">{{ $test->ganker > 0 ? '+'.$test->ganker : $test->ganker }} ({{ $test->ganker >= 0 ? 'Positif' : 'Negatif' }})</span></div>
+                    <div class="factor-desc">
+                        @if($test->ganker > 0) <span class="text-success fw-bold">Meningkat.</span> Stamina luar biasa di akhir waktu.
+                        @elseif($test->ganker == 0) <span class="text-info fw-bold">Datar.</span> Daya tahan konsisten dari awal ke akhir.
+                        @else <span class="text-danger fw-bold">Menurun.</span> Rentan lelah dan hilang fokus di akhir tugas.
+                        @endif
+                    </div>
+                </div>
             </td>
         </tr>
     </table>
 
+    {{-- BAGIAN C: DISTRIBUSI & METRIK KINERJA --}}
+    <div class="section-title">C. Distribusi Jawaban & Metrik Kinerja</div>
     <table style="margin-bottom: 15px;">
         <tr>
             <td style="width: 45%; vertical-align: top; padding-right: 15px;">
-                <div class="sub-title">Distribusi Jawaban Keseluruhan</div>
-                <table class="info-table" style="margin-top: 8px; margin-bottom: 0; background: transparent; border: 1px solid #e2e8f0;">
+                <table class="info-table" style="margin-top: 0; background: transparent; border: 1px solid #e2e8f0;">
                     <tr>
                         <td style="color: #64748b; padding: 4px 8px;">Total Input:</td>
                         <td style="text-align: right; font-weight: bold; padding: 4px 8px;">{{ $test->total_answered }}</td>
@@ -200,18 +246,17 @@
             </td>
             
             <td style="width: 55%; vertical-align: top; padding-left: 10px;">
-                <div class="sub-title">Metrik Kinerja Detail</div>
-                <div style="margin-top: 8px;">
+                <div>
                     <div class="progress-wrapper">
-                        <div class="progress-label">Accuracy Rate (Ketelitian) <span>{{ $accuracy }}%</span></div>
+                        <div class="progress-label">Accuracy Rate (Ketelitian) <span style="color:#22c55e;">{{ $accuracy }}%</span></div>
                         <div class="progress-bg"><div class="progress-bar bg-success" style="width: {{ $accuracy }}%;"></div></div>
                     </div>
                     <div class="progress-wrapper">
-                        <div class="progress-label">Speed Capacity (Kapasitas Kerja) <span>{{ round($pankerPerc) }}%</span></div>
+                        <div class="progress-label">Speed Capacity (Kapasitas Kerja) <span style="color:#4338ca;">{{ round($pankerPerc) }}%</span></div>
                         <div class="progress-bg"><div class="progress-bar bg-primary" style="width: {{ $pankerPerc }}%;"></div></div>
                     </div>
                     <div class="progress-wrapper" style="margin-bottom: 0;">
-                        <div class="progress-label">Stability Index (Konsistensi) <span>{{ round($jankerPerc) }}%</span></div>
+                        <div class="progress-label">Stability Index (Konsistensi) <span style="color:#f59e0b;">{{ round($jankerPerc) }}%</span></div>
                         <div class="progress-bg"><div class="progress-bar bg-warning" style="width: {{ $jankerPerc }}%;"></div></div>
                     </div>
                 </div>
@@ -219,52 +264,36 @@
         </tr>
     </table>
 
-    <div class="section-title">B. Analisis Produktivitas Per Kuartal (Endurance Chart)</div>
-    <div style="margin-bottom: 20px;">
-        <table class="chart-table">
+    {{-- BAGIAN D: GRAFIK KUARTAL --}}
+    {{-- BAGIAN D: GRAFIK KUARTAL --}}
+    <div class="section-title">D. Analisis Ritme Per Kuartal (Endurance Chart)</div>
+    <div style="margin-bottom: 20px; text-align: center;">
+        {{-- Tambahkan align="center" dan pastikan width-nya dikecilkan di sini --}}
+        <table class="chart-table" align="center" style="width: 60%; margin: 0 auto;">
             <tr>
                 @foreach($quarters as $index => $q)
                     @php 
-                        $barHeight = ($q / $maxQuarter) * 100; 
+                        // KUNCI MAKSIMAL TINGGI BAR ADALAH 40px
+                        $barHeightPx = ($q / $maxQuarter) * 40; 
+                        
+                        if($barHeightPx < 2) {
+                            $barHeightPx = 2;
+                        }
                     @endphp
                     <td>
                         <div style="font-size: 9px; font-weight: bold; color: #4338ca; margin-bottom: 2px;">{{ $q }}</div>
-                        <div class="bar" style="height: {{ $barHeight }}%;"></div>
+                        <div class="bar" style="height: {{ $barHeightPx }}px;"></div>
                     </td>
                 @endforeach
             </tr>
             <tr>
-                <td class="bar-label">Fase 1<br>(1-10)</td>
-                <td class="bar-label">Fase 2<br>(11-20)</td>
-                <td class="bar-label">Fase 3<br>(21-30)</td>
-                <td class="bar-label">Fase 4<br>(31-40)</td>
-                <td class="bar-label">Fase 5<br>(41-50)</td>
+                <td class="bar-label">Kuartal 1<br>(1-10)</td>
+                <td class="bar-label">Kuartal 2<br>(11-20)</td>
+                <td class="bar-label">Kuartal 3<br>(21-30)</td>
+                <td class="bar-label">Kuartal 4<br>(31-40)</td>
+                <td class="bar-label">Kuartal 5<br>(41-50)</td>
             </tr>
         </table>
-    </div>
-
-    <div class="section-title">C. Interpretasi Klinis & Kesimpulan</div>
-    <div class="analysis-box">
-        <div class="analysis-item">
-            <div class="sub-title" style="border:none; margin-bottom:2px;">1. Kapasitas & Energi (Speed)</div>
-            <div class="analysis-text">
-                Kandidat menunjukkan level energi rata-rata {{ round($test->panker, 1) }} per unit waktu. Hal ini merefleksikan {{ $test->panker > 12 ? 'kapasitas mental yang luas dalam merespons tekanan tugas yang tinggi dan repetitif.' : 'tempo kerja yang cenderung normal dan metodis dalam beradaptasi dengan ritme tugas.' }}
-            </div>
-        </div>
-
-        <div class="analysis-item">
-            <div class="sub-title" style="border:none; margin-bottom:2px;">2. Pengendalian Diri (Accuracy)</div>
-            <div class="analysis-text">
-                Dengan akurasi {{ $accuracy }}% ({{ $test->tianker }} kesalahan/hole), kandidat {{ $test->tianker <= 5 ? 'memiliki mekanisme kontrol impuls yang prima, sangat cocok untuk pekerjaan dengan presisi krusial.' : 'menunjukkan kerentanan terhadap distraksi, membutuhkan supervisi pada penyelesaian tugas detail.' }}
-            </div>
-        </div>
-
-        <div class="analysis-item">
-            <div class="sub-title" style="border:none; margin-bottom:2px;">3. Daya Tahan Stres (Endurance)</div>
-            <div class="analysis-text">
-                Berdasarkan grafik fase dan nilai GANKER ({{ round($test->ganker, 1) }}), tren produktivitas bersifat {{ $test->ganker >= 0 ? 'Meningkat/Stabil' : 'Menurun' }}. Ini menunjukkan kandidat {{ $test->ganker >= 0 ? 'mampu mempertahankan fokus tanpa kelelahan mental (Fatigue) berarti.' : 'cenderung mengalami penurunan motivasi/fokus saat dihadapkan pada rutinitas panjang.' }}
-            </div>
-        </div>
     </div>
 
     @php
@@ -284,6 +313,7 @@
         }
     @endphp
 
+    {{-- KESIMPULAN --}}
     <div class="verdict-banner {{ $verdictClass }}">
         <div class="verdict-title">Rekomendasi Final Penempatan</div>
         <div class="verdict-value">{{ $verdictText }}</div>
@@ -292,7 +322,7 @@
 
     <div class="footer">
         <strong>Laporan Rahasia HRD HerbaTech Indonesia</strong><br>
-        Dokumen dicetak secara sistemis pada {{ date('d/m/Y H:i:s') }}. Dokumen ini sah dan tidak memerlukan tanda tangan.
+        Dokumen dicetak secara otomatis oleh sistem pada {{ date('d/m/Y H:i:s') }}. Tidak memerlukan tanda tangan basah.
     </div>
 </body>
 </html>
