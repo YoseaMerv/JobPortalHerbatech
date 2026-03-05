@@ -28,6 +28,7 @@
         border-radius: 16px; 
         border: 2px solid transparent; 
         background: #f1f5f9;
+        pointer-events: none; /* Kunci kolom yang tidak aktif */
     }
 
     .test-column.active { 
@@ -36,6 +37,7 @@
         background: #ffffff; 
         box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); 
         border: 2px solid #4338ca; 
+        pointer-events: auto; /* Buka kunci untuk kolom aktif */
     }
 
     /* Angka Kraepelin */
@@ -94,6 +96,13 @@
 
     .text-danger-custom { color: #ef4444 !important; animation: blinker 1s linear infinite; }
     @keyframes blinker { 50% { opacity: 0; } }
+    
+    /* Overlay Peringatan */
+    #warning-overlay {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.85); z-index: 9999; display: none;
+        align-items: center; justify-content: center; color: white; text-align: center;
+    }
 </style>
 
 @php
@@ -102,6 +111,19 @@
 @endphp
 
 <div class="container-fluid p-0">
+    <div id="offline-alert" class="alert alert-danger mb-0 rounded-0 text-center fw-bold d-none" style="position: sticky; top:0; z-index: 1001;">
+        <i class="fas fa-wifi-slash mr-2"></i> Koneksi Internet Terputus! Jangan merefresh halaman.
+    </div>
+
+    <div id="warning-overlay">
+        <div>
+            <i class="fas fa-exclamation-triangle text-warning fa-4x mb-3"></i>
+            <h2 class="fw-bold">Peringatan Kecurangan!</h2>
+            <p>Anda terdeteksi keluar dari layar tes. Ini adalah peringatan ke-<span id="cheat-count">0</span> dari 3.</p>
+            <button class="btn btn-warning fw-bold mt-3 px-4 rounded-pill" onclick="resumeTest()">Kembali ke Tes</button>
+        </div>
+    </div>
+
     <div class="timer-header d-flex justify-content-between align-items-center shadow-sm">
         <div>
             <h5 class="mb-0 fw-bold text-dark text-uppercase letter-spacing-1">Tes Kraepelin</h5>
@@ -128,12 +150,10 @@
                     $totalItems = count($column);
                 @endphp
 
-                {{-- Render: Kita mulai loop dari angka paling atas (index terakhir) menuju angka terbawah (index 0) --}}
+                {{-- Render dari Atas ke Bawah (Logic Tetap Sama) --}}
                 @for ($i = $totalItems - 1; $i >= 0; $i--)
                     <div class="number-box">{{ $column[$i] }}</div>
                     
-                    {{-- Input diletakkan setelah angka (kecuali angka terakhir/paling bawah) --}}
-                    {{-- Indeks row 0 akan tercipta di paling bawah visual --}}
                     @if ($i > 0)
                         <input type="number" 
                                class="input-box" 
@@ -141,7 +161,7 @@
                                data-col="{{ $colIndex }}" 
                                data-row="{{ $i - 1 }}"
                                id="input-{{ $colIndex }}-{{ $i - 1 }}" 
-                               oninput="if (this.value.length > 1) this.value = this.value.slice(-1);"
+                               oninput="handleInput(this)"
                                disabled>
                     @endif
                 @endfor
@@ -161,30 +181,147 @@
     </div>
 </div>
 
-
-
 <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 <script>
     const totalColumns = {{ count($questionsArray) }};
     const testId = "{{ $test->id }}";
     const submitUrl = "{{ route('seeker.kraepelin.submit', ':testId') }}".replace(':testId', testId);
     
+    // Konfigurasi Tes
+    const columnTimeLimit =30; // 30 detik per kolom
+    const storageKey = `kraepelin_progress_${testId}`;
+    
     let currentCol = 0;
-    let columnTimeLimit =1; // 30 detik per kolom
     let timerInterval;
     let isSubmitting = false;
     let allAnswers = {};
+    let cheatWarnings = 0;
 
     const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
     axios.defaults.headers.common['X-CSRF-TOKEN'] = csrfToken;
 
-    // Proteksi Tab
+    // --- 1. LOCAL STORAGE (ANTI-RESET) ---
+    function loadSavedProgress() {
+        const savedData = localStorage.getItem(storageKey);
+        if (savedData) {
+            const parsedData = JSON.parse(savedData);
+            allAnswers = parsedData.answers || {};
+            
+            // Jangan load currentCol dari storage, paksa lanjut agar waktu real-time
+            // Kita hanya me-restore jawaban yang sudah terketik di memori
+            Object.keys(allAnswers).forEach(key => {
+                const parts = key.split('-');
+                const col = parts[0];
+                const row = parts[1];
+                const inputEl = document.getElementById(`input-${col}-${row}`);
+                if (inputEl) {
+                    inputEl.value = allAnswers[key];
+                }
+            });
+        }
+    }
+
+    function saveToLocal() {
+        localStorage.setItem(storageKey, JSON.stringify({
+            answers: allAnswers,
+            last_saved: new Date().getTime()
+        }));
+    }
+
+    // --- 2. DETEKSI INTERNET (OFFLINE/ONLINE) ---
+    window.addEventListener('offline', () => {
+        document.getElementById('offline-alert').classList.remove('d-none');
+        document.getElementById('main-test-area').style.pointerEvents = 'none'; // Kunci layar
+    });
+
+    window.addEventListener('online', () => {
+        document.getElementById('offline-alert').classList.add('d-none');
+        document.getElementById('main-test-area').style.pointerEvents = 'auto'; // Buka kunci
+    });
+
+    // --- 3. DETEKSI CHEAT (PINDAH TAB) ---
+    document.addEventListener("visibilitychange", () => {
+        if (document.hidden && !isSubmitting && currentCol < totalColumns) {
+            cheatWarnings++;
+            document.getElementById('cheat-count').innerText = cheatWarnings;
+            document.getElementById('warning-overlay').style.display = 'flex';
+            
+            if (cheatWarnings >= 3) {
+                // Auto-Submit Jika Melanggar 3 Kali
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Pelanggaran Maksimal!',
+                    text: 'Anda telah keluar dari layar tes 3 kali. Tes dihentikan otomatis.',
+                    allowOutsideClick: false,
+                    showConfirmButton: false
+                });
+                setTimeout(finishTest, 2500);
+            }
+        }
+    });
+
+function resumeTest() {
+        // 1. Sembunyikan overlay peringatan
+        document.getElementById('warning-overlay').style.display = 'none';
+        
+        // 2. Cari baris terakhir yang harus dikerjakan (dari bawah ke atas)
+        let r = 0;
+        let targetInput = null;
+        
+        while (true) {
+            const el = document.getElementById(`input-${currentCol}-${r}`);
+            if (!el) break; // Berhenti jika sudah mencapai baris paling atas (tidak ada elemen lagi)
+            
+            // Cari input pertama yang tidak didisable dan isinya masih kosong
+            if (!el.disabled && el.value === "") {
+                targetInput = el;
+                break; 
+            }
+            r++;
+        }
+
+        // 3. Kembalikan fokus kursor
+        if (targetInput) {
+            targetInput.focus();
+            // Opsional: gulir layar agar field tersebut berada di tengah
+            targetInput.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+        } else {
+            // Fallback: jika semua baris sudah penuh, kembali ke kolom terbawah
+            const firstInput = document.getElementById(`input-${currentCol}-0`);
+            if(firstInput) firstInput.focus();
+        }
+    }
+
+    // --- 4. PROTEKSI KELUAR HALAMAN ---
     window.addEventListener('beforeunload', function (e) {
         if (!isSubmitting) {
             e.preventDefault();
-            e.returnValue = 'Progres tes akan hilang jika Anda keluar.';
+            e.returnValue = 'Progres tes mungkin tidak tersimpan sepenuhnya ke server jika Anda keluar.';
         }
     });
+
+    // --- FUNGSI UTAMA KRAEPELIN ---
+    
+    // Handle Input (Agar tercatat langsung ke Local Storage)
+    window.handleInput = function(element) {
+        if (element.value.length > 1) {
+            element.value = element.value.slice(-1);
+        }
+        
+        // Simpan ke Object memory
+        if (element.value !== "") {
+            allAnswers[`${element.dataset.col}-${element.dataset.row}`] = element.value;
+            saveToLocal(); // Auto-save ke LocalStorage
+            
+            // Pindah ke Atas (Sesuai Logika Original Anda)
+            const col = element.dataset.col;
+            const currentRow = parseInt(element.dataset.row);
+            const nextInput = document.getElementById(`input-${col}-${currentRow + 1}`);
+            if (nextInput) nextInput.focus();
+        }
+    };
 
     function startColumnTimer() {
         if (timerInterval) clearInterval(timerInterval);
@@ -197,15 +334,20 @@
         timerDisplay.classList.remove('text-danger-custom');
         progressDisplay.innerText = `${currentCol + 1} / ${totalColumns}`;
         
-        // Reset kolom lama & Aktifkan kolom baru
-        document.querySelectorAll('.test-column').forEach(el => el.classList.remove('active'));
+        // Kunci Semua Kolom
+        document.querySelectorAll('.test-column').forEach(el => {
+            el.classList.remove('active');
+            el.querySelectorAll('.input-box').forEach(input => input.disabled = true);
+        });
+        
+        // Buka Kolom Saat Ini
         const activeEl = document.getElementById(`col-${currentCol}`);
         if (!activeEl) return;
         
         activeEl.classList.add('active');
         activeEl.querySelectorAll('.input-box').forEach(input => input.disabled = false);
         
-        // FOKUS: Selalu ke index 0 (Input paling BAWAH di kolom tersebut)
+        // Auto Fokus ke Input Terbawah (Index 0)
         setTimeout(() => {
             const firstInput = document.getElementById(`input-${currentCol}-0`);
             if(firstInput) {
@@ -225,24 +367,24 @@
 
             if (timeLeft <= 0) {
                 clearInterval(timerInterval);
-                saveCurrentColumnData();
-                moveToNextColumn();
+                moveToNextColumn(); // Pindah Kolom Otomatis
             }
         }, 1000);
     }
 
-    function saveCurrentColumnData() {
-        const activeEl = document.getElementById(`col-${currentCol}`);
-        if (!activeEl) return;
-        activeEl.querySelectorAll('.input-box').forEach(input => {
-            if(input.value !== "") {
-                allAnswers[`${input.dataset.col}-${input.dataset.row}`] = input.value;
-            }
-            input.disabled = true; // Matikan input kolom lama
-        });
-    }
-
     function moveToNextColumn() {
+        // Ambil Data Terakhir sebelum pindah (jaga-jaga ada yang telat ngetik)
+        const activeEl = document.getElementById(`col-${currentCol}`);
+        if (activeEl) {
+            activeEl.querySelectorAll('.input-box').forEach(input => {
+                if(input.value !== "") {
+                    allAnswers[`${input.dataset.col}-${input.dataset.row}`] = input.value;
+                }
+                input.disabled = true; // Kunci permanen
+            });
+            saveToLocal();
+        }
+
         currentCol++;
         if (currentCol < totalColumns) {
             startColumnTimer();
@@ -251,23 +393,7 @@
         }
     }
 
-    // Event PINDAH FOKUS KE ATAS (Row + 1)
-    document.addEventListener('input', function(e) {
-        if (e.target.classList.contains('input-box')) {
-            if (e.target.value !== "") {
-                const col = e.target.dataset.col;
-                const currentRow = parseInt(e.target.dataset.row);
-                
-                // Cari input dengan row di atasnya (currentRow + 1)
-                const nextInput = document.getElementById(`input-${col}-${currentRow + 1}`);
-                if (nextInput) {
-                    nextInput.focus();
-                }
-            }
-        }
-    });
-
-    // Event BACKSPACE KE BAWAH (Row - 1)
+    // Event BACKSPACE KE BAWAH (Row - 1) (Tetap dipertahankan)
     document.addEventListener('keydown', function(e) {
         if (e.target.classList.contains('input-box')) {
             const col = e.target.dataset.col;
@@ -280,9 +406,11 @@
         }
     });
 
+    // --- 5. SUBMIT VIA AJAX ---
     async function finishTest() {
-        if (isSubmitting) return;
+        if (isSubmitting) return; // Anti Double-Submit
         isSubmitting = true;
+        clearInterval(timerInterval);
 
         const loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'));
         loadingModal.show();
@@ -290,20 +418,34 @@
         try {
             const response = await axios.post(submitUrl, {
                 answers: allAnswers,
-                total_answered: Object.keys(allAnswers).length
+                total_answered: Object.keys(allAnswers).length,
+                cheat_count: cheatWarnings // Opsional: kirim data cheat ke server
             });
             
             if (response.data.status === 'success') {
+                localStorage.removeItem(storageKey); // Bersihkan LocalStorage setelah berhasil
                 window.location.href = response.data.redirect;
+            } else {
+                throw new Error("Gagal memproses data di server");
             }
         } catch (error) {
-            alert('Gagal mengirim jawaban. Silakan hubungi admin.');
-            console.error(error);
-            isSubmitting = false;
-            loadingModal.hide();
+            Swal.fire({
+                icon: 'error',
+                title: 'Oops...',
+                text: 'Terjadi kesalahan saat menyimpan jawaban. Data Anda aman di sistem kami. Halaman akan dimuat ulang.',
+                confirmButtonText: 'Muat Ulang'
+            }).then(() => {
+                isSubmitting = false;
+                loadingModal.hide();
+                window.location.reload(); // Reload agar bisa submit ulang
+            });
         }
     }
 
-    document.addEventListener('DOMContentLoaded', startColumnTimer);
+    // Mulai Tes saat halaman siap
+    document.addEventListener('DOMContentLoaded', () => {
+        loadSavedProgress();
+        startColumnTimer();
+    });
 </script>
 @endsection

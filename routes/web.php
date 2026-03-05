@@ -71,7 +71,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'verified', 'role:ad
     Route::resource('applications', \App\Http\Controllers\Admin\ApplicationController::class);
     Route::post('applications/{application}/status', [\App\Http\Controllers\Admin\ApplicationController::class, 'updateStatus'])->name('applications.update-status');
     Route::get('applications/{application}/download-cv', [\App\Http\Controllers\Admin\ApplicationController::class, 'downloadCv'])->name('applications.download-cv');
-
+    Route::get('kraepelin/{id}', [\App\Http\Controllers\Company\Kraepelin\KraepelinController::class, 'exportPdf'])->name('kraepelin.show');
     // Reports
     Route::get('reports/jobs', [\App\Http\Controllers\Admin\ReportController::class, 'jobs'])->name('reports.jobs');
     Route::get('reports/applications', [\App\Http\Controllers\Admin\ReportController::class, 'applications'])->name('reports.applications');

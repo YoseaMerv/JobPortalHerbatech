@@ -185,6 +185,65 @@
                 @endif
 
                 {{-- ============================================== --}}
+                {{-- PESAN DARI HRD / JADWAL WAWANCARA              --}}
+                {{-- ============================================== --}}
+                @if(in_array($application->status, ['interview', 'accepted', 'rejected']))
+                <div class="mb-5">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <h5 class="fw-bold text-dark mb-0">
+                            @if($application->status === 'interview')
+                                <i class="fas fa-comments text-primary me-2"></i> Informasi Wawancara
+                            @elseif($application->status === 'accepted')
+                                <i class="fas fa-envelope-open-text text-success me-2"></i> Surat Keputusan (Diterima)
+                            @else
+                                <i class="fas fa-envelope-open-text text-danger me-2"></i> Surat Keputusan (Ditolak)
+                            @endif
+                        </h5>
+                    </div>
+                    
+                    @php
+                        // Menentukan warna dan ikon berdasarkan status
+                        $noteColor = match($application->status) {
+                            'interview' => 'primary',
+                            'accepted' => 'success',
+                            'rejected' => 'danger',
+                            default => 'secondary'
+                        };
+                        $noteIcon = match($application->status) {
+                            'interview' => 'fa-calendar-check',
+                            'accepted' => 'fa-handshake',
+                            'rejected' => 'fa-times-circle',
+                            default => 'fa-info-circle'
+                        };
+                    @endphp
+
+                    <div class="p-4 border border-{{ $noteColor }} border-opacity-25 rounded-4 shadow-sm" style="background-color: #f8fafc;">
+                        <div class="d-flex flex-column flex-md-row gap-3">
+                            <div class="assessment-icon bg-{{ $noteColor }} text-white shadow-sm flex-shrink-0">
+                                <i class="fas {{ $noteIcon }}"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <h6 class="fw-bold text-dark mb-2">Pesan / Keputusan dari HRD:</h6>
+                                @if($application->notes)
+                                    <div class="p-3 bg-white border rounded-3 text-dark mb-0 shadow-sm" style="white-space: pre-line; line-height: 1.6; font-size: 0.95rem;">
+                                        {!! nl2br(e($application->notes)) !!}
+                                    </div>
+                                @else
+                                    <div class="p-3 bg-white border rounded-3 text-muted fst-italic mb-0" style="font-size: 0.95rem;">
+                                        @if($application->status === 'interview')
+                                            HRD belum mencantumkan detail jadwal wawancara di sini. Silakan tunggu informasi lebih lanjut atau periksa kotak masuk email Anda.
+                                        @else
+                                            Tidak ada pesan tambahan dari HRD.
+                                        @endif
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @endif
+
+                {{-- ============================================== --}}
                 {{-- DOKUMEN LAMARAN                                --}}
                 {{-- ============================================== --}}
                 <div class="pt-2">
@@ -229,10 +288,6 @@
                         </div>
                     </div>
                 </div>
-
-                {{-- ============================================== --}}
-                {{-- DANGER ZONE (Tarik Lamaran)                    --}}
-                {{-- ============================================== --}}
                 @if($application->status === 'pending')
                 <div class="mt-5 pt-4 border-top text-center">
                     <form action="{{ route('seeker.applications.destroy', $application->id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menarik lamaran ini? Tindakan ini tidak dapat dibatalkan dan HRD tidak akan lagi melihat lamaran Anda.');">

@@ -19,23 +19,18 @@
             </div>
             <div class="text-white">
                 <h5 class="fw-bold mb-1">
-                    {{ $testInvitation->status === 'test_in_progress' ? 'Lanjutkan Tes Kraepelin' : 'Undangan Tes Kraepelin!' }}
+                    {{ $testInvitation->status === 'test_in_progress' ? 'Lanjutkan Proses Tes' : 'Undangan Tes Psikotes!' }}
                 </h5>
                 <p class="mb-3 small opacity-90">
                     {{ $testInvitation->status === 'test_in_progress' 
-                        ? 'Selesaikan tes Anda yang sedang berlangsung agar progres tersimpan.' 
-                        : 'Anda terpilih untuk tahap tes pada posisi ' . ($testInvitation->job?->title ?? 'Posisi Terkait') }}
+                        ? 'Ada tes yang belum Anda selesaikan. Segera rampungkan agar progres tersimpan.' 
+                        : 'Anda terpilih untuk tahap tes psikotes pada posisi ' . ($testInvitation->job?->title ?? 'Terkait') }}
                 </p>
 
-                @php
-                $targetRoute = ($testInvitation->status === 'test_in_progress')
-                ? route('seeker.kraepelin.start', $testInvitation->id)
-                : route('seeker.kraepelin.instructions', $testInvitation->id);
-                @endphp
-
-                <a href="{{ $targetRoute }}" class="btn btn-light btn-sm fw-bold px-4 rounded-pill shadow-sm text-indigo">
-                    <i class="fas fa-play me-2"></i>
-                    {{ $testInvitation->status === 'test_in_progress' ? 'LANJUTKAN SEKARANG' : 'MULAI TES' }}
+                {{-- PERBAIKAN: Mengarahkan ke Detail Lamaran --}}
+                <a href="{{ route('seeker.applications.show', $testInvitation->id) }}" class="btn btn-light btn-sm fw-bold px-4 rounded-pill shadow-sm text-indigo">
+                    <i class="fas fa-arrow-right me-2"></i>
+                    LIHAT DETAIL LAMARAN
                 </a>
             </div>
         </div>
@@ -78,10 +73,11 @@
                 <h6 class="mb-0 fw-bold text-body"><i class="fas fa-history me-2 text-primary"></i>Aktivitas Lamaran</h6>
                 
                 @if($testInvitation)
-                <a href="{{ route('seeker.kraepelin.instructions', $testInvitation->id) }}"
+                {{-- PERBAIKAN: Mengarahkan ke Detail Lamaran --}}
+                <a href="{{ route('seeker.applications.show', $testInvitation->id) }}"
                     class="btn btn-primary btn-sm fw-bold px-4 rounded-pill shadow-sm">
-                    <i class="fas fa-play me-2"></i>
-                    {{ $testInvitation->status === 'test_in_progress' ? 'LANJUTKAN TES' : 'KERJAKAN TES' }}
+                    <i class="fas fa-arrow-right me-2"></i>
+                    LIHAT DETAIL
                 </a>
                 @else
                 <a href="{{ route('seeker.applications.index') }}" class="small text-decoration-none fw-bold">Lihat Semua</a>
@@ -110,6 +106,7 @@
                                             'pending'          => 'warning text-dark',
                                             'test_invited'     => 'primary',
                                             'test_in_progress' => 'warning text-dark',
+                                            'test_completed'   => 'success',
                                             'accepted'         => 'success',
                                             'rejected'         => 'danger',
                                             default            => 'secondary'
@@ -176,10 +173,8 @@
                         <h6 class="mb-0 fw-bold text-indigo" style="font-size: 0.9rem;">{{ Str::limit($job->title ?? 'Judul Lowongan', 25) }}</h6>
                         <small class="text-muted smaller">{{ $job->created_at->diffForHumans() }}</small>
                     </div>
-                    {{-- Diubah menjadi text-body agar otomatis putih di dark mode --}}
                     <div class="text-body small mb-2">{{ $job->company?->company_name ?? 'Perusahaan' }}</div>
                     
-                    {{-- PERBAIKAN BADGE: Menggunakan bg-opacity-10 yang cantik di Light Mode & elegan di Dark Mode --}}
                     <div class="d-flex gap-2 flex-wrap">
                         <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 fw-medium px-2 py-1" style="font-size: 0.7rem;">
                             <i class="fas fa-map-marker-alt me-1"></i> {{ $job->location?->name ?? 'Remote' }}

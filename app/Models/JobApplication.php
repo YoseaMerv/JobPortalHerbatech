@@ -25,6 +25,7 @@ class JobApplication extends Model
         'user_id',
         'cv_path',
         'birth_date',
+        'cover_letter',
         'cover_letter_path',
         'status',
         'notes',
