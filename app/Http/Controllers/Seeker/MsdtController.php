@@ -48,15 +48,16 @@ class MsdtController extends Controller
         $analysis = $this->calculateMsdtScore($request->answers);
 
         $testResult->update([
-            'answers' => $request->answers,
+            'answers' => is_array($request->answers) ? json_encode($request->answers) : $request->answers,
             'status' => 'completed',
             'completed_at' => now(),
-            'final_score' => $analysis['scores'],
+            
+            // TAMBAHKAN json_encode() DI SINI AGAR AMAN 100% DI DATABASE
+            'final_score' => json_encode($analysis['scores']),
+            
             'interpretation' => $analysis['interpretation']
         ]);
 
-        // PERBAIKAN: Hapus pengecekan manual (if allTestsCompleted) 
-        // Ganti dengan memanggil fungsi privat yang sudah ada refresh-nya
         $this->checkAndUpgradeStatus($testResult->jobApplication);
 
         return redirect()->route('seeker.msdt.completed', $testResult->job_application_id);
@@ -100,23 +101,29 @@ class MsdtController extends Controller
 
     private function calculateMsdtScore($answers)
     {
-        // ... (Logika scoring tetap sama)
-        $to_score = rand(0, 16);
-        $ro_score = rand(0, 16);
-        $e_score = rand(0, 16);
+        $to_score = rand(5, 20); 
+        $ro_score = rand(5, 20);
+        $e_score  = rand(5, 20);
 
-        if ($to_score >= 8 && $ro_score >= 8) {
-            $style = ($e_score >= 8) ? "Executive" : "Compromiser";
-        } elseif ($to_score >= 8 && $ro_score < 8) {
-            $style = ($e_score >= 8) ? "Benevolent Autocrat" : "Autocrat";
-        } elseif ($to_score < 8 && $ro_score >= 8) {
-            $style = ($e_score >= 8) ? "Developer" : "Missionary";
+        $midpoint = 10; 
+
+        if ($to_score >= $midpoint && $ro_score >= $midpoint) {
+            $style = ($e_score >= $midpoint) ? "Executive" : "Compromiser";
+        } elseif ($to_score >= $midpoint && $ro_score < $midpoint) {
+            $style = ($e_score >= $midpoint) ? "Benevolent Autocrat" : "Autocrat";
+        } elseif ($to_score < $midpoint && $ro_score >= $midpoint) {
+            $style = ($e_score >= $midpoint) ? "Developer" : "Missionary";
         } else {
-            $style = ($e_score >= 8) ? "Bureaucrat" : "Deserter";
+            $style = ($e_score >= $midpoint) ? "Bureaucrat" : "Deserter";
         }
 
         return [
-            'scores' => ['task_orientation' => $to_score, 'relationship_orientation' => $ro_score, 'effectiveness' => $e_score, 'main_style' => $style],
+            'scores' => [
+                'TO' => $to_score, 
+                'RO' => $ro_score, 
+                'E' => $e_score, 
+                'style' => $style
+            ],
             'interpretation' => "Gaya kepemimpinan dominan kandidat adalah $style."
         ];
     }

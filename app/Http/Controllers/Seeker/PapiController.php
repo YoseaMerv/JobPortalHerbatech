@@ -47,14 +47,17 @@ class PapiController extends Controller
         $scores = $this->calculatePapiScore($request->answers);
 
         $testResult->update([
-            'answers' => $request->answers,
+            // PERBAIKAN: Pastikan array answers di-encode ke JSON
+            'answers' => is_array($request->answers) ? json_encode($request->answers) : $request->answers,
             'status' => 'completed',
             'completed_at' => now(),
-            'final_score' => $scores,
+            
+            // PERBAIKAN: Pastikan scores di-encode ke JSON (meskipun model casts array, untuk berjaga-jaga)
+            'final_score' => is_array($scores) ? json_encode($scores) : $scores,
+            
             'interpretation' => "Profil kepribadian PAPI Kostick telah dianalisis sesuai standar dimensi."
         ]);
 
-        // GANTI LOGIKA LAMA DENGAN INI:
         $this->checkAndUpgradeStatus($testResult->jobApplication);
 
         return redirect()->route('seeker.papi.completed', $testResult->job_application_id);
@@ -98,42 +101,37 @@ class PapiController extends Controller
 
     private function calculatePapiScore($answers)
     {
-        // 20 Dimensi PAPI Kostick
+        // 20 Dimensi PAPI Kostick (Kosongkan dulu nilainya)
         $finalScores = [
-            'G' => 0,
-            'L' => 0,
-            'I' => 0,
-            'T' => 0,
-            'V' => 0,
-            'S' => 0,
-            'R' => 0,
-            'D' => 0,
-            'C' => 0,
-            'E' => 0, // Peran (Role)
-            'N' => 0,
-            'A' => 0,
-            'P' => 0,
-            'X' => 0,
-            'B' => 0,
-            'O' => 0,
-            'Z' => 0,
-            'K' => 0,
-            'F' => 0,
-            'W' => 0  // Kebutuhan (Need)
+            'G' => 0, 'L' => 0, 'I' => 0, 'T' => 0, 'V' => 0, 
+            'S' => 0, 'R' => 0, 'D' => 0, 'C' => 0, 'E' => 0, 
+            'N' => 0, 'A' => 0, 'P' => 0, 'X' => 0, 'B' => 0, 
+            'O' => 0, 'Z' => 0, 'K' => 0, 'F' => 0, 'W' => 0
         ];
 
-        if (!$answers) return $finalScores;
+        // Jika tidak ada jawaban (misal user bypass form), kembalikan array skor kosong
+        if (!$answers || !is_array($answers)) {
+            return $finalScores;
+        }
 
-        // Ambil mapping dimensi dari database soal
+        // Ambil mapping dimensi (a dan b) dari database soal PAPI
         $questions = PsychologicalQuestion::where('test_type', 'papi')->get()->keyBy('question_number');
 
         foreach ($answers as $num => $choice) {
             if (!isset($questions[$num])) continue;
 
-            // Jika user pilih A (Panah Horizontal), tambah skor untuk Dimensi A
-            // Jika user pilih B (Panah Diagonal), tambah skor untuk Dimensi B
-            $dimension = ($choice === 'a') ? $questions[$num]->dimension_a : $questions[$num]->dimension_b;
+            // Pastikan pilihan dikonversi ke huruf kecil agar case-insensitive
+            $choiceKey = strtolower($choice);
 
+            // Ambil dimensi (huruf A-Z) sesuai dengan pilihan kandidat (a atau b)
+            $dimension = null;
+            if ($choiceKey === 'a') {
+                $dimension = $questions[$num]->dimension_a;
+            } elseif ($choiceKey === 'b') {
+                $dimension = $questions[$num]->dimension_b;
+            }
+
+            // Jika dimensi valid dan ada di array $finalScores, tambahkan skornya (+1)
             if ($dimension && isset($finalScores[$dimension])) {
                 $finalScores[$dimension]++;
             }

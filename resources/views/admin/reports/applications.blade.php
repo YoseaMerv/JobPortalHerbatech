@@ -2,11 +2,6 @@
 
 @section('title', 'Laporan Lamaran Masuk')
 
-@section('breadcrumb')
-    <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Dashboard</a></li>
-    <li class="breadcrumb-item active">Laporan Lamaran</li>
-@endsection
-
 @section('content')
 <style>
     :root {
