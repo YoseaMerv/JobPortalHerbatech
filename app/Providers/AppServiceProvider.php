@@ -3,34 +3,32 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
-use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\View;
+use Illuminate\Support\Facades\Cache;
 use App\Models\Company;
 
 class AppServiceProvider extends ServiceProvider
 {
-    /**
-     * Register any application services.
-     */
-    public function register(): void
+    public function register()
     {
         //
     }
 
-    /**
-     * Bootstrap any application services.
-     */
-    public function boot(): void
+    public function boot()
     {
-        Paginator::useBootstrapFive();
-        \Carbon\Carbon::setLocale('id');
-
         try {
-            if (\Illuminate\Support\Facades\Schema::hasTable('companies')) {
-                $company = \App\Models\Company::first();
-                // Cukup gunakan ini saja untuk semua layout
-                \Illuminate\Support\Facades\View::share('company', $company);
-            }
-        } catch (\Exception $e) {}
+            // Ambil data pertama Company sebagai pengaturan global dan Cache selama 24 jam (1440 menit)
+            // agar tidak query ke database setiap kali buka halaman
+            $siteSettings = Cache::remember('global_site_settings', 1440, function () {
+                return Company::first();
+            });
+
+            // Bagikan variabel $siteSettings ke semua file Blade
+            View::share('siteSettings', $siteSettings);
+
+        } catch (\Exception $e) {
+            // Try-catch digunakan agar saat pertama kali 'php artisan migrate' (tabel belum ada) tidak terjadi error
+            View::share('siteSettings', null);
+        }
     }
 }

@@ -2,7 +2,6 @@
 
 @section('title', 'Laporan Lowongan')
 
-
 @section('content')
 <style>
     :root {
@@ -143,9 +142,11 @@
                     <p class="text-muted small mb-0">Rincian jumlah lowongan pekerjaan berdasarkan bidang industrinya.</p>
                 </div>
             </div>
-            <button class="btn btn-light border text-muted shadow-sm" onclick="window.print()" style="border-radius: 12px;">
-                <i class="fas fa-print mr-1"></i> Cetak
-            </button>
+            
+            {{-- Tombol Export PDF --}}
+            <a href="{{ route('admin.reports.jobs', ['export' => 'pdf']) }}" class="btn btn-danger text-white shadow-sm font-weight-bold px-4" style="border-radius: 12px;">
+                <i class="fas fa-file-pdf mr-2"></i> Unduh PDF
+            </a>
         </div>
 
         <div class="card-body p-0 table-responsive">

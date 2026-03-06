@@ -51,11 +51,10 @@ class JobController extends Controller
             'work_setting'     => 'required|in:on_site,remote,hybrid',
             'description'      => 'required|string',
             'requirements'     => 'nullable|string',
-            'responsibilities' => 'nullable|string',
             'salary_min'       => 'nullable|numeric|min:0',
             'salary_max'       => 'nullable|numeric|min:0|gte:salary_min',
             'salary_type'      => 'required|in:monthly,yearly,hourly,project',
-            'salary_currency'  => 'required|string|max:3', // FIX BUG: Tambahkan validasi mata uang
+            'salary_currency'  => 'required|string|max:3',
             'is_salary_visible'=> 'boolean',
             'job_type'         => 'required|in:full_time,part_time,contract,freelance,internship',
             'experience_level' => 'required|string|max:255',
@@ -63,7 +62,6 @@ class JobController extends Controller
             'deadline'         => 'nullable|date|after:today',
             'vacancy'          => 'required|integer|min:1',
             'is_featured'      => 'boolean',
-            'is_remote'        => 'boolean',
             'status'           => 'required|in:draft,published,closed',
         ]);
 
@@ -77,11 +75,11 @@ class JobController extends Controller
             'location_id'      => $request->location_id,
             'description'      => $request->description,
             'requirements'     => $request->requirements,
-            'responsibilities' => $request->responsibilities,
+            'responsibilities' => null, // Dikosongkan karena tidak ada di form baru
             'salary_min'       => $request->salary_min,
             'salary_max'       => $request->salary_max,
             'salary_type'      => $request->salary_type,
-            'salary_currency'  => $request->salary_currency, // SIMPAN KE DB
+            'salary_currency'  => $request->salary_currency,
             'is_salary_visible'=> $request->has('is_salary_visible'),
             'job_type'         => $request->job_type,
             'experience_level' => $request->experience_level,
@@ -90,7 +88,8 @@ class JobController extends Controller
             'vacancy'          => $request->vacancy,
             'status'           => $request->status,
             'is_featured'      => $request->has('is_featured'),
-            'is_remote'        => $request->has('is_remote'),
+            // Otomatis set is_remote berdasarkan work_setting
+            'is_remote'        => in_array($request->work_setting, ['remote', 'hybrid']), 
         ]);
 
         return redirect()->route('admin.jobs.index')->with('success', 'Lowongan pekerjaan berhasil dibuat.');
@@ -122,11 +121,10 @@ class JobController extends Controller
             'work_setting'     => 'required|in:on_site,remote,hybrid',
             'description'      => 'required|string',
             'requirements'     => 'nullable|string',
-            'responsibilities' => 'nullable|string',
             'salary_min'       => 'nullable|numeric|min:0',
             'salary_max'       => 'nullable|numeric|min:0|gte:salary_min',
             'salary_type'      => 'required|in:monthly,yearly,hourly,project',
-            'salary_currency'  => 'required|string|max:3', // FIX BUG: Tambahkan validasi mata uang
+            'salary_currency'  => 'required|string|max:3',
             'is_salary_visible'=> 'boolean',
             'job_type'         => 'required|in:full_time,part_time,contract,freelance,internship',
             'experience_level' => 'required|string|max:255',
@@ -134,7 +132,6 @@ class JobController extends Controller
             'deadline'         => 'nullable|date|after:today',
             'vacancy'          => 'required|integer|min:1',
             'is_featured'      => 'boolean',
-            'is_remote'        => 'boolean',
             'status'           => 'required|in:draft,published,closed,expired',
         ]);
 
@@ -144,10 +141,10 @@ class JobController extends Controller
             $data['slug'] = Str::slug($request->title) . '-' . time();
         }
 
-        // Penanganan Checkbox
+        // Penanganan Checkbox & Logika Otomatis
         $data['is_featured']       = $request->has('is_featured');
-        $data['is_remote']         = $request->has('is_remote');
         $data['is_salary_visible'] = $request->has('is_salary_visible');
+        $data['is_remote']         = in_array($request->work_setting, ['remote', 'hybrid']); // Logika otomatis
 
         $job->update($data);
 

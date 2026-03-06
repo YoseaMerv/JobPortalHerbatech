@@ -6,15 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Models\Company;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Cache; // TAMBAHKAN INI
 
 class SettingController extends Controller
 {
-    /**
-     * Tampilkan halaman pengaturan.
-     */
     public function index()
     {
-        // Ambil data pertama atau buat jika belum ada
         $company = Company::first();
 
         if (!$company) {
@@ -28,14 +25,10 @@ class SettingController extends Controller
         return view('admin.settings.index', compact('company'));
     }
 
-    /**
-     * Proses pembaruan data pengaturan.
-     */
     public function update(Request $request)
     {
         $company = Company::firstOrFail();
 
-        // 1. Validasi Input
         $validated = $request->validate([
             'company_name'        => 'required|string|max:255',
             'company_description' => 'nullable|string',
@@ -55,17 +48,13 @@ class SettingController extends Controller
             'company_website'     => 'nullable|url|max:255',
         ]);
 
-        // 2. Handle Upload Logo Perusahaan
         if ($request->hasFile('company_logo')) {
-            // Hapus logo lama jika ada
             if ($company->company_logo) {
                 Storage::disk('public')->delete($company->company_logo);
             }
-            // Simpan yang baru dan update array $validated
             $validated['company_logo'] = $request->file('company_logo')->store('company/logos', 'public');
         }
 
-        // 3. Handle Upload Favicon
         if ($request->hasFile('favicon')) {
             if ($company->favicon) {
                 Storage::disk('public')->delete($company->favicon);
@@ -73,7 +62,6 @@ class SettingController extends Controller
             $validated['favicon'] = $request->file('favicon')->store('company/favicons', 'public');
         }
 
-        // 4. Handle Upload Hero Image
         if ($request->hasFile('hero_image')) {
             if ($company->hero_image) {
                 Storage::disk('public')->delete($company->hero_image);
@@ -81,9 +69,10 @@ class SettingController extends Controller
             $validated['hero_image'] = $request->file('hero_image')->store('company/hero', 'public');
         }
 
-        // 5. Update data ke Database
-        // Baris ini akan mengambil semua nilai dari array $validated yang sudah kita proses di atas
         $company->update($validated);
+
+        // BERSIHKAN CACHE SETIAP KALI SETTING DIUPDATE
+        Cache::forget('global_site_settings');
 
         return redirect()->route('admin.settings.index')
             ->with('success', 'Pengaturan identitas portal berhasil diperbarui.');

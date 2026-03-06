@@ -3,19 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@yield('title', 'Admin Dashboard') - {{ config('app.name', 'Job Portal') }}</title>
+    
+    <title>@yield('title', 'Admin Dashboard') - {{ $siteSettings->company_name ?? config('app.name', 'Job Portal') }}</title>
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="{{ asset('plugins/summernote/summernote-bs4.min.css') }}">
     
-    @php
-        // Ambil data company global jika belum di-passing dari controller
-        $company = \App\Models\Company::first();
-    @endphp
-    
-    @if(isset($company->favicon) && $company->favicon)
-        <link rel="icon" href="{{ asset('storage/' . $company->favicon) }}" type="image/x-icon"/>
+    @if(isset($siteSettings) && $siteSettings->favicon)
+        <link rel="icon" href="{{ asset('storage/' . $siteSettings->favicon) }}" type="image/x-icon"/>
+    @else
+        <link rel="icon" href="{{ asset('favicon.ico') }}" type="image/x-icon"/>
     @endif
 
     <style>
@@ -181,14 +179,14 @@
     
     <div class="sidebar-wrapper">
         <a href="{{ route('admin.dashboard') }}" class="brand-link">
-            @if(isset($company->company_logo) && $company->company_logo)
-                <img src="{{ asset('storage/' . $company->company_logo) }}" alt="Logo" class="rounded-circle shadow-sm" style="width: 35px; height: 35px; object-fit: contain; margin-right: 12px; background: white; padding: 2px;">
+            @if(isset($siteSettings) && $siteSettings->company_logo)
+                <img src="{{ asset('storage/' . $siteSettings->company_logo) }}" alt="Logo" class="rounded-circle shadow-sm" style="width: 35px; height: 35px; object-fit: contain; margin-right: 12px; background: white; padding: 2px;">
             @else
                 <div class="rounded-circle shadow-sm bg-primary d-flex align-items-center justify-content-center" style="width: 35px; height: 35px; margin-right: 12px;">
                     <i class="fas fa-briefcase text-white" style="font-size: 0.9rem;"></i>
                 </div>
             @endif
-            <span>{{ Str::limit($company->company_name ?? 'HerbaTech Admin', 18) }}</span>
+            <span>{{ Str::limit($siteSettings->company_name ?? 'HerbaTech Admin', 18) }}</span>
         </a>
 
         <div class="sidebar-menu">
@@ -315,7 +313,7 @@
         </div>
 
         <footer class="footer-wrapper mt-auto">
-            <div>Hak Cipta &copy; {{ date('Y') }} <span class="text-primary fw-bold">{{ config('app.name', 'JobPortal') }}</span>.</div>
+            <div>Hak Cipta &copy; {{ date('Y') }} <span class="text-primary fw-bold">{{ $siteSettings->company_name ?? config('app.name', 'JobPortal') }}</span>.</div>
             <div class="fw-medium">Versi 1.0.0</div>
         </footer>
     </div>

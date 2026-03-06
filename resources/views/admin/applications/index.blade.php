@@ -91,7 +91,7 @@
                         <th class="pl-4">Kandidat</th>
                         <th>Melamar Posisi</th>
                         <th class="text-center">Status</th>
-                        <th class="text-center">Tes Kraepelin</th>
+                        <th class="text-center">Progres Tes</th>
                         <th>Waktu Melamar</th>
                         <th class="text-right pr-4">Aksi</th>
                     </tr>

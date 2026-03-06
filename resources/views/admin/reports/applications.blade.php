@@ -95,42 +95,6 @@
         display: inline-flex;
         align-items: center;
     }
-
-    /* ---------------------------------------------------
-       MAGIC PRINT CSS (Hanya aktif saat diklik Cetak)
-       --------------------------------------------------- */
-    @media print {
-        /* Sembunyikan elemen bawaan AdminLTE (sidebar, navbar, footer) */
-        body * {
-            visibility: hidden;
-        }
-        
-        /* Hanya tampilkan area tabel (.main-card) */
-        .main-card, .main-card * {
-            visibility: visible;
-        }
-        
-        /* Posisikan tabel ke sudut kiri atas kertas */
-        .main-card {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
-            border: none !important;
-            box-shadow: none !important;
-        }
-        
-        /* Sembunyikan tombol cetak dan teks pembantu agar hasil print bersih */
-        .btn, .card-header-custom p {
-            display: none !important;
-        }
-        
-        /* Paksa browser mencetak warna background (badge, icon) */
-        * {
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-        }
-    }
 </style>
 
 <div class="container-fluid pb-5">
@@ -202,9 +166,11 @@
                     <p class="text-muted small mb-0">Statistik jumlah pelamar yang masuk dalam 30 hari terakhir.</p>
                 </div>
             </div>
-            <button class="btn btn-light border text-muted shadow-sm" onclick="window.print()" style="border-radius: 12px;">
-                <i class="fas fa-print mr-1"></i> Cetak
-            </button>
+            
+            {{-- PERBAIKAN: Tombol Diganti Menjadi Unduh PDF --}}
+            <a href="{{ route('admin.reports.applications', ['export' => 'pdf']) }}" class="btn btn-danger text-white shadow-sm font-weight-bold px-4" style="border-radius: 12px;">
+                <i class="fas fa-file-pdf mr-2"></i> Unduh PDF
+            </a>
         </div>
 
         <div class="card-body p-0 table-responsive">
