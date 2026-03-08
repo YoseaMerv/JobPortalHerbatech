@@ -1,265 +1,354 @@
 @extends('layouts.admin')
 
+@section('title', 'Edit Lowongan')
+
 @section('content')
 <style>
+    body,
+    .full-container,
+    button,
+    input,
+    select,
+    textarea {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif !important;
+    }
+
     :root {
         --slate-50: #f8fafc;
         --slate-100: #f1f5f9;
         --slate-200: #e2e8f0;
+        --text-main: #334155;
+        --text-muted: #64748b;
         --text-heading: #1e293b;
-        --brand-primary: #0d6efd;
+        --brand-indigo: #0d6efd;
     }
-    .form-card {
+
+    .full-container {
+        width: 100%;
+        max-width: 100%;
+        padding: 0 15px;
+    }
+
+    .edit-card {
         border-radius: 16px;
         border: 1px solid var(--slate-200);
-        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
         background: #fff;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+        overflow: hidden;
     }
-    .form-card-header {
+
+    .card-header-full {
+        padding: 30px 40px;
         border-bottom: 1px solid var(--slate-100);
-        padding: 24px;
-        background: #fff;
-        border-radius: 16px 16px 0 0;
+        background: linear-gradient(to right, #ffffff, var(--slate-50));
     }
-    .form-label-custom {
-        font-size: 0.75rem;
+
+    .form-label {
+        font-size: 0.85rem;
         font-weight: 700;
-        color: #64748b;
-        letter-spacing: 0.05em;
-        text-transform: uppercase;
+        color: var(--text-heading);
         margin-bottom: 8px;
     }
-    .input-style {
-        background-color: var(--slate-50);
+
+    .form-control,
+    .form-select {
+        border-radius: 10px;
         border: 1px solid var(--slate-200);
-        border-radius: 12px;
         padding: 12px 16px;
         font-size: 0.95rem;
-        transition: all 0.2s;
+        color: var(--text-main);
+        transition: all 0.2s ease;
     }
-    .input-style:focus {
-        background-color: #fff;
-        border-color: var(--brand-primary);
-        box-shadow: 0 0 0 4px rgba(13, 110, 253, 0.1);
+
+    .form-control:focus,
+    .form-select:focus {
+        border-color: var(--brand-indigo);
+        box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.15);
         outline: none;
     }
-    .input-group-text-custom {
-        background-color: var(--slate-100);
-        border: 1px solid var(--slate-200);
-        border-right: none;
-        border-radius: 12px 0 0 12px;
-        color: #64748b;
-        font-weight: 600;
+
+    .section-label-display {
+        font-size: 0.85rem;
+        font-weight: 800;
+        color: var(--brand-indigo);
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        margin: 40px 0 20px 0;
+        display: flex;
+        align-items: center;
     }
-    .switch-label {
-        font-weight: 600;
-        color: var(--text-heading);
-        cursor: pointer;
+
+    .section-label-display::after {
+        content: "";
+        flex: 1;
+        height: 1px;
+        background: var(--slate-100);
+        margin-left: 20px;
+    }
+
+    .custom-switch-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding-top: 10px;
     }
 </style>
 
-<div class="container-fluid pb-5">
-    <div class="mb-4">
+<link href="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-bs4.min.css" rel="stylesheet">
+
+<div class="full-container pb-5">
+    <div class="mb-4 d-flex justify-content-between align-items-center">
         <a href="{{ route('admin.jobs.index') }}" class="text-decoration-none text-muted fw-bold small">
-            <i class="fas fa-arrow-left mr-1"></i> Kembali ke Daftar Lowongan
+            <i class="fas fa-chevron-left me-2"></i> KEMBALI KE MANAJEMEN LOWONGAN
         </a>
     </div>
 
-    <div class="row justify-content-center">
-        <div class="col-lg-10">
-            <div class="form-card">
-                <div class="form-card-header d-flex justify-content-between align-items-center">
-                    <div>
-                        <h4 class="fw-bold mb-1" style="color: var(--text-heading);">Edit Lowongan</h4>
-                        <p class="text-muted small mb-0">Perbarui informasi untuk posisi <span class="fw-bold text-dark">{{ $job->title }}</span>.</p>
-                    </div>
-                    <span class="badge bg-light text-dark border px-3 py-2" style="border-radius: 20px;">
-                        <i class="fas fa-clock mr-1 text-muted"></i> Dibuat: {{ $job->created_at->format('d M Y') }}
-                    </span>
-                </div>
-
-                <form action="{{ route('admin.jobs.update', $job->id) }}" method="POST">
-                    @csrf
-                    @method('PUT')
-                    
-                    <div class="card-body p-4 p-md-5">
-                        {{-- Bagian 1: Informasi Dasar --}}
-                        <h6 class="fw-bold text-dark mb-4 pb-2 border-bottom"><i class="fas fa-info-circle text-primary mr-2"></i>Informasi Dasar</h6>
-                        <div class="row g-4 mb-5">
-                            <div class="col-md-6">
-                                <label class="form-label-custom">Judul Lowongan <span class="text-danger">*</span></label>
-                                <input type="text" name="title" class="form-control input-style @error('title') is-invalid @enderror" value="{{ old('title', $job->title) }}" required>
-                                @error('title') <span class="invalid-feedback">{{ $message }}</span> @enderror
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label-custom">Perusahaan <span class="text-danger">*</span></label>
-                                <select name="company_id" class="form-control input-style @error('company_id') is-invalid @enderror" required>
-                                    <option value="" disabled>Pilih Perusahaan</option>
-                                    @foreach($companies as $company)
-                                        <option value="{{ $company->id }}" {{ old('company_id', $job->company_id) == $company->id ? 'selected' : '' }}>
-                                            {{ $company->company_name }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                                @error('company_id') <span class="invalid-feedback">{{ $message }}</span> @enderror
-                            </div>
-                            
-                            <div class="col-md-6 mt-4">
-                                <label class="form-label-custom">Kategori Pekerjaan <span class="text-danger">*</span></label>
-                                <select name="category_id" class="form-control input-style @error('category_id') is-invalid @enderror" required>
-                                    <option value="" disabled>Pilih Kategori</option>
-                                    @foreach($categories as $category)
-                                        <option value="{{ $category->id }}" {{ old('category_id', $job->category_id) == $category->id ? 'selected' : '' }}>
-                                            {{ $category->name }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                                @error('category_id') <span class="invalid-feedback">{{ $message }}</span> @enderror
-                            </div>
-                            <div class="col-md-6 mt-4">
-                                <label class="form-label-custom">Lokasi Penempatan <span class="text-danger">*</span></label>
-                                <select name="location_id" class="form-control input-style @error('location_id') is-invalid @enderror" required>
-                                    <option value="" disabled>Pilih Lokasi</option>
-                                    @foreach($locations as $location)
-                                        <option value="{{ $location->id }}" {{ old('location_id', $job->location_id) == $location->id ? 'selected' : '' }}>
-                                            {{ $location->name }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                                @error('location_id') <span class="invalid-feedback">{{ $message }}</span> @enderror
-                            </div>
-                        </div>
-
-                        {{-- Bagian 2: Detail Pekerjaan --}}
-                        <h6 class="fw-bold text-dark mb-4 pb-2 border-bottom"><i class="fas fa-align-left text-warning mr-2"></i>Detail Pekerjaan</h6>
-                        <div class="row g-4 mb-5">
-                            <div class="col-12">
-                                <label class="form-label-custom">Deskripsi Pekerjaan <span class="text-danger">*</span></label>
-                                <textarea name="description" rows="5" class="form-control input-style @error('description') is-invalid @enderror" required>{{ old('description', $job->description) }}</textarea>
-                                @error('description') <span class="invalid-feedback">{{ $message }}</span> @enderror
-                            </div>
-                            
-                            <div class="col-md-6 mt-4">
-                                <label class="form-label-custom">Persyaratan Khusus</label>
-                                <textarea name="requirements" rows="4" class="form-control input-style @error('requirements') is-invalid @enderror" placeholder="Pisahkan dengan baris baru (Enter)">{{ old('requirements', $job->requirements) }}</textarea>
-                                @error('requirements') <span class="invalid-feedback">{{ $message }}</span> @enderror
-                            </div>
-                            <div class="col-md-6 mt-4">
-                                <label class="form-label-custom">Tanggung Jawab</label>
-                                <textarea name="responsibilities" rows="4" class="form-control input-style @error('responsibilities') is-invalid @enderror" placeholder="Pisahkan dengan baris baru (Enter)">{{ old('responsibilities', $job->responsibilities) }}</textarea>
-                                @error('responsibilities') <span class="invalid-feedback">{{ $message }}</span> @enderror
-                            </div>
-                        </div>
-
-                        {{-- Bagian 3: Kompensasi & Kualifikasi --}}
-                        <h6 class="fw-bold text-dark mb-4 pb-2 border-bottom"><i class="fas fa-money-bill-wave text-success mr-2"></i>Kompensasi & Kualifikasi</h6>
-                        <div class="row g-4 mb-5">
-                            <div class="col-md-4">
-                                <label class="form-label-custom">Tipe Gaji <span class="text-danger">*</span></label>
-                                <select name="salary_type" class="form-control input-style @error('salary_type') is-invalid @enderror" required>
-                                    <option value="monthly" {{ old('salary_type', $job->salary_type) == 'monthly' ? 'selected' : '' }}>Bulanan</option>
-                                    <option value="project" {{ old('salary_type', $job->salary_type) == 'project' ? 'selected' : '' }}>Sistem Proyek</option>
-                                    <option value="hourly" {{ old('salary_type', $job->salary_type) == 'hourly' ? 'selected' : '' }}>Per Jam</option>
-                                    <option value="yearly" {{ old('salary_type', $job->salary_type) == 'yearly' ? 'selected' : '' }}>Tahunan</option>
-                                </select>
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label-custom">Gaji Minimum (IDR)</label>
-                                <div class="input-group">
-                                    <div class="input-group-prepend">
-                                        <span class="input-group-text input-group-text-custom">Rp</span>
-                                    </div>
-                                    <input type="number" name="salary_min" class="form-control input-style" style="border-radius: 0 12px 12px 0;" value="{{ old('salary_min', $job->salary_min) }}">
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label-custom">Gaji Maksimum (IDR)</label>
-                                <div class="input-group">
-                                    <div class="input-group-prepend">
-                                        <span class="input-group-text input-group-text-custom">Rp</span>
-                                    </div>
-                                    <input type="number" name="salary_max" class="form-control input-style" style="border-radius: 0 12px 12px 0;" value="{{ old('salary_max', $job->salary_max) }}">
-                                </div>
-                            </div>
-
-                            <div class="col-md-4 mt-4">
-                                <label class="form-label-custom">Tipe Pekerjaan <span class="text-danger">*</span></label>
-                                <select name="job_type" class="form-control input-style @error('job_type') is-invalid @enderror" required>
-                                    <option value="full_time" {{ old('job_type', $job->job_type) == 'full_time' ? 'selected' : '' }}>Penuh Waktu (Full Time)</option>
-                                    <option value="part_time" {{ old('job_type', $job->job_type) == 'part_time' ? 'selected' : '' }}>Paruh Waktu (Part Time)</option>
-                                    <option value="contract" {{ old('job_type', $job->job_type) == 'contract' ? 'selected' : '' }}>Kontrak</option>
-                                    <option value="freelance" {{ old('job_type', $job->job_type) == 'freelance' ? 'selected' : '' }}>Freelance</option>
-                                    <option value="internship" {{ old('job_type', $job->job_type) == 'internship' ? 'selected' : '' }}>Magang (Internship)</option>
-                                </select>
-                            </div>
-                            <div class="col-md-4 mt-4">
-                                <label class="form-label-custom">Level Pengalaman <span class="text-danger">*</span></label>
-                                <input type="text" name="experience_level" class="form-control input-style @error('experience_level') is-invalid @enderror" value="{{ old('experience_level', $job->experience_level) }}" required placeholder="Misal: 2 Tahun, Fresh Graduate">
-                            </div>
-                            <div class="col-md-4 mt-4">
-                                <label class="form-label-custom">Minimal Pendidikan</label>
-                                <select name="education_level" class="form-control input-style @error('education_level') is-invalid @enderror">
-                                    <option value="">Tidak Ada Syarat Khusus</option>
-                                    <option value="sma" {{ old('education_level', $job->education_level) == 'sma' ? 'selected' : '' }}>SMA / SMK Sederajat</option>
-                                    <option value="d3" {{ old('education_level', $job->education_level) == 'd3' ? 'selected' : '' }}>Diploma 3 (D3)</option>
-                                    <option value="s1" {{ old('education_level', $job->education_level) == 's1' ? 'selected' : '' }}>Sarjana (S1)</option>
-                                    <option value="s2" {{ old('education_level', $job->education_level) == 's2' ? 'selected' : '' }}>Magister (S2)</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        {{-- Bagian 4: Pengaturan Tayang --}}
-                        <h6 class="fw-bold text-dark mb-4 pb-2 border-bottom"><i class="fas fa-cog text-danger mr-2"></i>Pengaturan Publikasi</h6>
-                        <div class="row g-4 mb-4">
-                            <div class="col-md-4">
-                                <label class="form-label-custom">Jumlah Lowongan <span class="text-danger">*</span></label>
-                                <input type="number" name="vacancy" min="1" class="form-control input-style @error('vacancy') is-invalid @enderror" value="{{ old('vacancy', $job->vacancy) }}" required>
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label-custom">Batas Akhir Lamaran</label>
-                                <input type="date" name="deadline" class="form-control input-style @error('deadline') is-invalid @enderror" value="{{ old('deadline', $job->deadline ? \Carbon\Carbon::parse($job->deadline)->format('Y-m-d') : '') }}">
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label-custom">Status Publikasi <span class="text-danger">*</span></label>
-                                <select name="status" class="form-control input-style font-weight-bold text-dark @error('status') is-invalid @enderror" required>
-                                    <option value="published" {{ old('status', $job->status) == 'published' ? 'selected' : '' }}>TAYANG (Dapat dilamar)</option>
-                                    <option value="draft" {{ old('status', $job->status) == 'draft' ? 'selected' : '' }}>DRAFT (Disembunyikan)</option>
-                                    <option value="closed" {{ old('status', $job->status) == 'closed' ? 'selected' : '' }}>TUTUP (Selesai/Penuh)</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        {{-- Switch / Checkbox --}}
-                        <div class="bg-light p-4 rounded-lg border">
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="custom-control custom-switch custom-switch-lg">
-                                        <input type="checkbox" class="custom-control-input" id="is_remote" name="is_remote" value="1" {{ old('is_remote', $job->is_remote) ? 'checked' : '' }}>
-                                        <label class="custom-control-label switch-label" for="is_remote">Tersedia untuk Remote Worker (WFH)</label>
-                                        <small class="d-block text-muted mt-1">Centang jika pelamar diperbolehkan bekerja dari rumah.</small>
-                                    </div>
-                                </div>
-                                <div class="col-md-6 mt-3 mt-md-0">
-                                    <div class="custom-control custom-switch custom-switch-lg">
-                                        <input type="checkbox" class="custom-control-input" id="is_featured" name="is_featured" value="1" {{ old('is_featured', $job->is_featured) ? 'checked' : '' }}>
-                                        <label class="custom-control-label switch-label text-primary" for="is_featured">Jadikan Lowongan Prioritas (Featured)</label>
-                                        <small class="d-block text-muted mt-1">Lowongan akan muncul di urutan teratas atau halaman beranda.</small>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                    </div>
-                    
-                    <div class="card-footer bg-white text-right py-4" style="border-top: 1px solid var(--slate-100); border-radius: 0 0 16px 16px;">
-                        <a href="{{ route('admin.jobs.index') }}" class="btn btn-light border px-4 font-weight-bold" style="border-radius: 20px;">Batal</a>
-                        <button type="submit" class="btn btn-primary px-5 ml-2 font-weight-bold shadow-sm" style="border-radius: 20px;">
-                            Simpan Perubahan
-                        </button>
-                    </div>
-                </form>
+    {{-- Kotak Error untuk mendeteksi masalah validasi --}}
+    @if ($errors->any())
+    <div class="alert alert-danger border-0 shadow-sm mb-4" style="border-radius: 12px; background-color: #fef2f2;">
+        <div class="d-flex">
+            <i class="fas fa-exclamation-circle text-danger me-3 mt-1"></i>
+            <div>
+                <span class="fw-bold d-block text-danger">Gagal menyimpan perubahan:</span>
+                <ul class="mb-0 small fw-medium text-danger">
+                    @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
             </div>
         </div>
     </div>
+    @endif
+
+    <div class="card edit-card border-0">
+        <div class="card-header-full d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="h4 fw-bold mb-1" style="color: var(--text-heading);">Edit Lowongan: {{ $job->title }}</h1>
+                <p class="text-muted small mb-0">Perbarui informasi posisi ini.</p>
+            </div>
+        </div>
+
+        <div class="card-body p-4 p-md-5">
+            <form action="{{ route('admin.jobs.update', $job->id) }}" method="POST">
+                @csrf
+                @method('PUT')
+
+                <div class="section-label-display" style="margin-top: 0;">Identitas Posisi & Perusahaan</div>
+                <div class="row g-4 mb-4">
+                    <div class="col-md-6">
+                        <label for="title" class="form-label">Jabatan / Judul Pekerjaan <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="title" name="title" value="{{ old('title', $job->title) }}" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="company_id" class="form-label">Pilih Perusahaan <span class="text-danger">*</span></label>
+                        <select class="form-select" id="company_id" name="company_id" required>
+                            @foreach($companies as $company)
+                            <option value="{{ $company->id }}" {{ old('company_id', $job->company_id) == $company->id ? 'selected' : '' }}>
+                                {{ $company->company_name }}
+                            </option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row g-4 mb-4">
+                    <div class="col-md-3">
+                        <label for="department" class="form-label">Departemen</label>
+                        <input type="text" class="form-control" id="department" name="department" value="{{ old('department', $job->department) }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="category_id" class="form-label">Kategori <span class="text-danger">*</span></label>
+                        <select class="form-select" id="category_id" name="category_id" required>
+                            @foreach($categories as $category)
+                            <option value="{{ $category->id }}" {{ old('category_id', $job->category_id) == $category->id ? 'selected' : '' }}>{{ $category->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="location_id" class="form-label">Lokasi Wilayah <span class="text-danger">*</span></label>
+                        <select class="form-select" id="location_id" name="location_id" required>
+                            @foreach($locations as $location)
+                            <option value="{{ $location->id }}" {{ old('location_id', $job->location_id) == $location->id ? 'selected' : '' }}>{{ $location->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="work_setting" class="form-label">Opsi Tempat Kerja <span class="text-danger">*</span></label>
+                        <select class="form-select" id="work_setting" name="work_setting" required>
+                            <option value="on_site" {{ old('work_setting', $job->work_setting) == 'on_site' ? 'selected' : '' }}>On-site (Di Kantor)</option>
+                            <option value="hybrid" {{ old('work_setting', $job->work_setting) == 'hybrid' ? 'selected' : '' }}>Hybrid</option>
+                            <option value="remote" {{ old('work_setting', $job->work_setting) == 'remote' ? 'selected' : '' }}>Remote (Jarak Jauh)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="section-label-display">Ketentuan & Kompensasi</div>
+                <div class="row g-4 mb-4">
+                    <div class="col-md-3">
+                        <label for="job_type" class="form-label">Jenis Pekerjaan <span class="text-danger">*</span></label>
+                        <select class="form-select" id="job_type" name="job_type" required>
+                            <option value="full_time" {{ old('job_type', $job->job_type) == 'full_time' ? 'selected' : '' }}>Purnawaktu (Full Time)</option>
+                            <option value="part_time" {{ old('job_type', $job->job_type) == 'part_time' ? 'selected' : '' }}>Paruh Waktu (Part Time)</option>
+                            <option value="contract" {{ old('job_type', $job->job_type) == 'contract' ? 'selected' : '' }}>Kontrak</option>
+                            <option value="internship" {{ old('job_type', $job->job_type) == 'internship' ? 'selected' : '' }}>Magang</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="salary_currency" class="form-label">Mata Uang <span class="text-danger">*</span></label>
+                        <select class="form-select" name="salary_currency" required>
+                            <option value="IDR" {{ old('salary_currency', $job->salary_currency) == 'IDR' ? 'selected' : '' }}>IDR (Rp)</option>
+                            <option value="USD" {{ old('salary_currency', $job->salary_currency) == 'USD' ? 'selected' : '' }}>USD ($)</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="salary_min" class="form-label">Gaji Minimum</label>
+                        <input type="number" class="form-control" name="salary_min" value="{{ old('salary_min', (int)$job->salary_min) }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="salary_max" class="form-label">Gaji Maksimum</label>
+                        <input type="number" class="form-control" name="salary_max" value="{{ old('salary_max', (int)$job->salary_max) }}">
+                    </div>
+                </div>
+
+                <div class="row g-4 mb-4 align-items-center">
+                    <div class="col-md-3">
+                        <label for="salary_type" class="form-label">Tampilkan Gaji Per</label>
+                        <select class="form-select" name="salary_type">
+                            <option value="monthly" {{ old('salary_type', $job->salary_type) == 'monthly' ? 'selected' : '' }}>Bulan</option>
+                            <option value="yearly" {{ old('salary_type', $job->salary_type) == 'yearly' ? 'selected' : '' }}>Tahun</option>
+                            <option value="hourly" {{ old('salary_type', $job->salary_type) == 'hourly' ? 'selected' : '' }}>Jam</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="vacancy" class="form-label">Jumlah Lowongan <span class="text-danger">*</span></label>
+                        <input type="number" class="form-control" name="vacancy" value="{{ old('vacancy', $job->vacancy) }}" min="1" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="deadline" class="form-label">Batas Waktu Lamaran</label>
+                        <input type="date" class="form-control" id="deadline" name="deadline" value="{{ old('deadline', optional($job->deadline)->format('Y-m-d')) }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="status" class="form-label">Status Publikasi <span class="text-danger">*</span></label>
+                        <select class="form-select border-primary" name="status" required>
+                            <option value="published" {{ old('status', $job->status) == 'published' ? 'selected' : '' }}>TAYANG (Published)</option>
+                            <option value="draft" {{ old('status', $job->status) == 'draft' ? 'selected' : '' }}>DRAFT (Disembunyikan)</option>
+                            <option value="closed" {{ old('status', $job->status) == 'closed' ? 'selected' : '' }}>TUTUP (Selesai)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="custom-switch-wrapper">
+                            <input type="hidden" name="is_salary_visible" value="0">
+                            <input class="form-check-input mt-0" type="checkbox" name="is_salary_visible" id="is_salary_visible" value="1" {{ old('is_salary_visible', $job->is_salary_visible) ? 'checked' : '' }} style="width: 2em; height: 1em; cursor: pointer;">
+                            <label class="form-check-label fw-bold small text-dark mb-0" for="is_salary_visible" style="cursor: pointer;">Tampilkan Gaji ke Publik</label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="custom-switch-wrapper">
+                            <input type="hidden" name="is_featured" value="0">
+                            <input class="form-check-input mt-0" type="checkbox" name="is_featured" id="is_featured" value="1" {{ old('is_featured', $job->is_featured) ? 'checked' : '' }} style="width: 2em; height: 1em; cursor: pointer;">
+                            <label class="form-check-label fw-bold small text-primary mb-0" for="is_featured" style="cursor: pointer;"><i class="fas fa-star me-1"></i> Tandai Lowongan Unggulan (Featured)</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section-label-display">Detail Persyaratan</div>
+                <div class="row g-4 mb-4">
+                    <div class="col-md-6">
+                        <label for="experience_level" class="form-label">Minimal Pengalaman <span class="text-danger">*</span></label>
+                        <select class="form-select" name="experience_level" required>
+                            <option value="entry_level" {{ old('experience_level', $job->experience_level) == 'entry_level' ? 'selected' : '' }}>Fresh Graduate / Entry Level</option>
+                            <option value="1_3_years" {{ old('experience_level', $job->experience_level) == '1_3_years' ? 'selected' : '' }}>1 - 3 Tahun</option>
+                            <option value="3_5_years" {{ old('experience_level', $job->experience_level) == '3_5_years' ? 'selected' : '' }}>3 - 5 Tahun</option>
+                            <option value="more_than_5_years" {{ old('experience_level', $job->experience_level) == 'more_than_5_years' ? 'selected' : '' }}>Diatas 5 Tahun</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="education_level" class="form-label">Minimal Pendidikan</label>
+                        <select class="form-select" name="education_level">
+                            <option value="">Tidak Ada Syarat Khusus / Bebas</option>
+                            <option value="sma" {{ old('education_level', $job->education_level) == 'sma' ? 'selected' : '' }}>SMA/SMK Sederajat</option>
+                            <option value="d3" {{ old('education_level', $job->education_level) == 'd3' ? 'selected' : '' }}>Diploma 3 (D3)</option>
+                            <option value="s1" {{ old('education_level', $job->education_level) == 's1' ? 'selected' : '' }}>Sarjana (S1 / D4)</option>
+                            <option value="s2" {{ old('education_level', $job->education_level) == 's2' ? 'selected' : '' }}>Magister (S2)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label for="description" class="form-label">Deskripsi Pekerjaan <span class="text-danger">*</span></label>
+                    <textarea class="form-control" id="description" name="description" rows="5" required>{{ old('description', $job->description) }}</textarea>
+                </div>
+
+                <div class="mb-5">
+                    <label for="requirements" class="form-label">Kualifikasi / Persyaratan Khusus <span class="text-danger">*</span></label>
+                    <textarea class="form-control" id="requirements" name="requirements" rows="5" required>{{ old('requirements', $job->requirements) }}</textarea>
+                </div>
+
+                {{-- Bagian 3.5: Persyaratan Tes Psikologi --}}
+                @php
+                $currentTests = old('required_tests', $job->required_tests ?? []);
+                if (!is_array($currentTests)) $currentTests = [];
+                @endphp
+                <div class="section-label-display">Persyaratan Ujian / Tes</div>
+                <div class="row g-4 mb-5">
+                    <div class="col-12">
+                        <label class="form-label mb-3">Pilih Tes yang Wajib Dikerjakan Pelamar</label>
+                        <div class="bg-light p-4 rounded-lg border d-flex gap-4 flex-wrap" style="border-radius: 12px;">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="test_kraepelin" name="required_tests[]" value="kraepelin" {{ in_array('kraepelin', $currentTests) ? 'checked' : '' }}>
+                                <label class="form-check-label fw-bold" for="test_kraepelin">Kraepelin (Ketelitian)</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="test_msdt" name="required_tests[]" value="msdt" {{ in_array('msdt', $currentTests) ? 'checked' : '' }}>
+                                <label class="form-check-label fw-bold" for="test_msdt">MSDT (Manajerial)</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="test_papi" name="required_tests[]" value="papi" {{ in_array('papi', $currentTests) ? 'checked' : '' }}>
+                                <label class="form-check-label fw-bold" for="test_papi">PAPI Kostick (Sikap Kerja)</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="test_disc" name="required_tests[]" value="disc" {{ in_array('disc', $currentTests) ? 'checked' : '' }}>
+                                <label class="form-check-label fw-bold" for="test_disc">DISC (Kepribadian)</label>
+                            </div>
+                        </div>
+                        <small class="text-muted mt-2 d-block"><i class="fas fa-info-circle me-1"></i> Centang tes yang sesuai dengan level jabatan lowongan ini. Kosongkan jika pelamar tidak perlu tes.</small>
+                    </div>
+                </div>
+
+                <div class="card-footer bg-white px-0 py-4 border-top d-flex justify-content-between align-items-center">
+                    <a href="{{ route('admin.jobs.index') }}" class="btn btn-link text-muted fw-bold text-decoration-none">
+                        BATALKAN
+                    </a>
+                    <button type="submit" class="btn btn-primary px-5 py-2 fw-bold shadow" style="border-radius: 12px; background: var(--brand-indigo); border: none;">
+                        SIMPAN PERUBAHAN
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-bs4.min.js"></script>
+<script>
+    $(document).ready(function() {
+        $('form').on('submit', function() {
+            $('textarea').removeAttr('required');
+        });
+
+        $('textarea[name="description"], textarea[name="requirements"]').summernote({
+            placeholder: 'Tuliskan rincian di sini...',
+            tabsize: 2,
+            height: 150,
+            toolbar: [
+                ['style', ['bold', 'italic', 'underline', 'clear']],
+                ['font', ['strikethrough']],
+                ['para', ['ul', 'ol', 'paragraph']],
+            ]
+        });
+    });
+</script>
 @endsection

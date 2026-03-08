@@ -5,7 +5,12 @@
 @section('content')
 <style>
     /* Konsistensi Font Modern */
-    body, .full-container, button, input, select, textarea {
+    body,
+    .full-container,
+    button,
+    input,
+    select,
+    textarea {
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif !important;
     }
 
@@ -13,17 +18,21 @@
         --slate-50: #f8fafc;
         --slate-100: #f1f5f9;
         --slate-200: #e2e8f0;
-        --text-main: #334155; 
+        --text-main: #334155;
         --text-muted: #64748b;
         --text-heading: #1e293b;
-        --brand-indigo: #4338ca; 
+        --brand-indigo: #4338ca;
     }
 
-    .full-container { width: 100%; max-width: 100%; padding: 0 15px; }
-    
-    .create-card { 
-        border-radius: 16px; 
-        border: 1px solid var(--slate-200); 
+    .full-container {
+        width: 100%;
+        max-width: 100%;
+        padding: 0 15px;
+    }
+
+    .create-card {
+        border-radius: 16px;
+        border: 1px solid var(--slate-200);
         background: #fff;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
         overflow: hidden;
@@ -42,7 +51,8 @@
         margin-bottom: 8px;
     }
 
-    .form-control, .form-select {
+    .form-control,
+    .form-select {
         border-radius: 10px;
         border: 1px solid var(--slate-200);
         padding: 12px 16px;
@@ -51,24 +61,30 @@
         transition: all 0.2s ease;
     }
 
-    .form-control:focus, .form-select:focus {
+    .form-control:focus,
+    .form-select:focus {
         border-color: var(--brand-indigo);
         box-shadow: 0 0 0 3px rgba(67, 56, 202, 0.1);
         outline: none;
     }
 
     .section-label-display {
-        font-size: 0.85rem; 
-        font-weight: 800; 
+        font-size: 0.85rem;
+        font-weight: 800;
         color: var(--brand-indigo);
-        text-transform: uppercase; 
-        letter-spacing: 0.1em; 
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
         margin: 40px 0 20px 0;
         display: flex;
         align-items: center;
     }
+
     .section-label-display::after {
-        content: ""; flex: 1; height: 1px; background: var(--slate-100); margin-left: 20px;
+        content: "";
+        flex: 1;
+        height: 1px;
+        background: var(--slate-100);
+        margin-left: 20px;
     }
 </style>
 
@@ -88,7 +104,7 @@
         <div class="card-body p-4 p-md-5">
             <form action="{{ route('company.jobs.store') }}" method="POST">
                 @csrf
-                
+
                 <div class="section-label-display" style="margin-top: 0;">Identitas Posisi</div>
                 <div class="row g-4 mb-4">
                     <div class="col-md-6">
@@ -108,7 +124,7 @@
                         <select class="form-select @error('category_id') is-invalid @enderror" id="category_id" name="category_id" required>
                             <option value="">Pilih Kategori</option>
                             @foreach(\App\Models\JobCategory::where('is_active', true)->get() as $category)
-                                <option value="{{ $category->id }}" {{ old('category_id') == $category->id ? 'selected' : '' }}>{{ $category->name }}</option>
+                            <option value="{{ $category->id }}" {{ old('category_id') == $category->id ? 'selected' : '' }}>{{ $category->name }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -117,7 +133,7 @@
                         <select class="form-select @error('location_id') is-invalid @enderror" id="location_id" name="location_id" required>
                             <option value="">Pilih Lokasi</option>
                             @foreach(\App\Models\JobLocation::where('is_active', true)->get() as $location)
-                                <option value="{{ $location->id }}" {{ old('location_id') == $location->id ? 'selected' : '' }}>{{ $location->name }}</option>
+                            <option value="{{ $location->id }}" {{ old('location_id') == $location->id ? 'selected' : '' }}>{{ $location->name }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -224,6 +240,39 @@
                 <div class="mb-5">
                     <label for="requirements" class="form-label">Kualifikasi / Persyaratan <span class="text-danger">*</span></label>
                     <textarea class="form-control" id="requirements" name="requirements" rows="5" placeholder="Tuliskan kualifikasi yang dibutuhkan..." required>{{ old('requirements') }}</textarea>
+                </div>
+
+                <div class="mb-5">
+                    <label for="responsibilities" class="form-label">Tanggung Jawab Utama</label>
+                    <textarea class="form-control" id="responsibilities" name="responsibilities" rows="5" placeholder="Tuliskan poin-poin tanggung jawab pekerjaan...">{{ old('responsibilities', $job->responsibilities ?? '') }}</textarea>
+                </div>
+
+                {{-- Bagian 3.5: Persyaratan Tes Psikologi --}}
+                <h6 class="fw-bold text-dark mb-4 pb-2 border-bottom"><i class="fas fa-brain text-info mr-2"></i>Persyaratan Tes Psikologi</h6>
+                <div class="row g-4 mb-5">
+                    <div class="col-12">
+                        <label class="form-label-custom">Pilih Tes yang Wajib Dikerjakan Pelamar</label>
+                        <div class="bg-light p-3 rounded-lg border d-flex gap-4 flex-wrap">
+                            <div class="custom-control custom-checkbox custom-control-inline">
+                                <input type="checkbox" class="custom-control-input" id="test_kraepelin" name="required_tests[]" value="kraepelin" {{ is_array(old('required_tests')) && in_array('kraepelin', old('required_tests')) ? 'checked' : '' }}>
+                                <label class="custom-control-label fw-bold" for="test_kraepelin">Kraepelin (Ketelitian)</label>
+                            </div>
+                            <div class="custom-control custom-checkbox custom-control-inline">
+                                <input type="checkbox" class="custom-control-input" id="test_msdt" name="required_tests[]" value="msdt" {{ is_array(old('required_tests')) && in_array('msdt', old('required_tests')) ? 'checked' : '' }}>
+                                <label class="custom-control-label fw-bold" for="test_msdt">MSDT (Manajerial)</label>
+                            </div>
+                            <div class="custom-control custom-checkbox custom-control-inline">
+                                <input type="checkbox" class="custom-control-input" id="test_papi" name="required_tests[]" value="papi" {{ is_array(old('required_tests')) && in_array('papi', old('required_tests')) ? 'checked' : '' }}>
+                                <label class="custom-control-label fw-bold" for="test_papi">PAPI Kostick (Sikap Kerja)</label>
+                            </div>
+                            <div class="custom-control custom-checkbox custom-control-inline">
+                                <input type="checkbox" class="custom-control-input" id="test_disc" name="required_tests[]" value="disc" {{ is_array(old('required_tests')) && in_array('disc', old('required_tests')) ? 'checked' : '' }}>
+                                <label class="custom-control-label fw-bold" for="test_disc">DISC (Kepribadian)</label>
+                            </div>
+                        </div>
+                        <small class="text-muted mt-2 d-block">Centang tes yang sesuai dengan pemetaan level jabatan lowongan ini. Kosongkan jika tidak ada tes.</small>
+                        @error('required_tests') <span class="text-danger small">{{ $message }}</span> @enderror
+                    </div>
                 </div>
 
                 <input type="hidden" name="status" value="published">
