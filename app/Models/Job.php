@@ -36,6 +36,7 @@ class Job extends Model
         'is_featured',
         'is_remote',
         'views',
+        'required_tests',
     ];
 
     protected $casts = [
@@ -47,6 +48,7 @@ class Job extends Model
         'is_salary_visible' => 'boolean', // Casting untuk keamanan data boolean
         'vacancy'           => 'integer',
         'views'             => 'integer',
+        'required_tests' => 'array',
     ];
 
     // --- Relationships ---
@@ -83,7 +85,7 @@ class Job extends Model
         return $query->published()
             ->where(function ($q) {
                 $q->whereNull('deadline')
-                  ->orWhere('deadline', '>=', now());
+                    ->orWhere('deadline', '>=', now());
             });
     }
 
@@ -110,7 +112,7 @@ class Job extends Model
 
         $currency = $this->salary_currency ?? 'IDR';
         $formatter = new \NumberFormatter('id_ID', \NumberFormatter::CURRENCY);
-        
+
         $typeMap = [
             'monthly' => 'per bulan',
             'hourly'  => 'per jam',
@@ -121,8 +123,8 @@ class Job extends Model
         $displayType = $typeMap[strtolower($this->salary_type)] ?? $this->salary_type;
 
         if ($this->salary_min && $this->salary_max) {
-            return $formatter->formatCurrency($this->salary_min, $currency) . ' - ' . 
-                   $formatter->formatCurrency($this->salary_max, $currency) . ' / ' . $displayType;
+            return $formatter->formatCurrency($this->salary_min, $currency) . ' - ' .
+                $formatter->formatCurrency($this->salary_max, $currency) . ' / ' . $displayType;
         }
 
         if ($this->salary_min) {
@@ -146,8 +148,8 @@ class Job extends Model
 
     public function isActive(): bool
     {
-        return $this->status === 'published' && 
-               (!$this->deadline || $this->deadline->isFuture() || $this->deadline->isToday());
+        return $this->status === 'published' &&
+            (!$this->deadline || $this->deadline->isFuture() || $this->deadline->isToday());
     }
 
     public function isExpired(): bool

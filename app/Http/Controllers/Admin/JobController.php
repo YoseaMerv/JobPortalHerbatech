@@ -18,12 +18,12 @@ class JobController extends Controller
 
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('title', 'like', "%{$search}%")
-                  ->orWhere('department', 'like', "%{$search}%")
-                  ->orWhereHas('company', function($compQuery) use ($search) {
-                      $compQuery->where('company_name', 'like', "%{$search}%");
-                  });
+                    ->orWhere('department', 'like', "%{$search}%")
+                    ->orWhereHas('company', function ($compQuery) use ($search) {
+                        $compQuery->where('company_name', 'like', "%{$search}%");
+                    });
             });
         }
 
@@ -36,7 +36,7 @@ class JobController extends Controller
         $companies = Company::all();
         $categories = JobCategory::active()->get();
         $locations = JobLocation::active()->get();
-        
+
         return view('admin.jobs.create', compact('companies', 'categories', 'locations'));
     }
 
@@ -55,15 +55,20 @@ class JobController extends Controller
             'salary_max'       => 'nullable|numeric|min:0|gte:salary_min',
             'salary_type'      => 'required|in:monthly,yearly,hourly,project',
             'salary_currency'  => 'required|string|max:3',
-            'is_salary_visible'=> 'boolean',
+            'is_salary_visible' => 'boolean',
             'job_type'         => 'required|in:full_time,part_time,contract,freelance,internship',
             'experience_level' => 'required|string|max:255',
             'education_level'  => 'nullable|in:sd,smp,sma,d3,s1,s2,s3',
-            'deadline'         => 'nullable|date|after:today',
+            'deadline'         => 'nullable|date',
             'vacancy'          => 'required|integer|min:1',
             'is_featured'      => 'boolean',
             'status'           => 'required|in:draft,published,closed',
+            'required_tests'   => 'nullable|array',
+            'required_tests.*' => 'in:kraepelin,msdt,papi,disc',
         ]);
+
+        // Jika HR tidak mencentang apa-apa, jadikan array kosong
+        $validatedData['required_tests'] = $request->input('required_tests', []);
 
         Job::create([
             'company_id'       => $request->company_id,
@@ -80,7 +85,7 @@ class JobController extends Controller
             'salary_max'       => $request->salary_max,
             'salary_type'      => $request->salary_type,
             'salary_currency'  => $request->salary_currency,
-            'is_salary_visible'=> $request->has('is_salary_visible'),
+            'is_salary_visible' => $request->has('is_salary_visible'),
             'job_type'         => $request->job_type,
             'experience_level' => $request->experience_level,
             'education_level'  => $request->education_level,
@@ -89,7 +94,8 @@ class JobController extends Controller
             'status'           => $request->status,
             'is_featured'      => $request->has('is_featured'),
             // Otomatis set is_remote berdasarkan work_setting
-            'is_remote'        => in_array($request->work_setting, ['remote', 'hybrid']), 
+            'is_remote'        => in_array($request->work_setting, ['remote', 'hybrid']),
+            'required_tests' => $request->input('required_tests', []),
         ]);
 
         return redirect()->route('admin.jobs.index')->with('success', 'Lowongan pekerjaan berhasil dibuat.');
@@ -106,7 +112,7 @@ class JobController extends Controller
         $companies = Company::all();
         $categories = JobCategory::active()->get();
         $locations = JobLocation::active()->get();
-        
+
         return view('admin.jobs.edit', compact('job', 'companies', 'categories', 'locations'));
     }
 
@@ -125,7 +131,7 @@ class JobController extends Controller
             'salary_max'       => 'nullable|numeric|min:0|gte:salary_min',
             'salary_type'      => 'required|in:monthly,yearly,hourly,project',
             'salary_currency'  => 'required|string|max:3',
-            'is_salary_visible'=> 'boolean',
+            'is_salary_visible' => 'boolean',
             'job_type'         => 'required|in:full_time,part_time,contract,freelance,internship',
             'experience_level' => 'required|string|max:255',
             'education_level'  => 'nullable|in:sd,smp,sma,d3,s1,s2,s3',
@@ -133,6 +139,8 @@ class JobController extends Controller
             'vacancy'          => 'required|integer|min:1',
             'is_featured'      => 'boolean',
             'status'           => 'required|in:draft,published,closed,expired',
+            'required_tests'   => 'nullable|array',
+            'required_tests.*' => 'in:kraepelin,msdt,papi,disc',
         ]);
 
         $data = $request->all();
@@ -145,6 +153,8 @@ class JobController extends Controller
         $data['is_featured']       = $request->has('is_featured');
         $data['is_salary_visible'] = $request->has('is_salary_visible');
         $data['is_remote']         = in_array($request->work_setting, ['remote', 'hybrid']); // Logika otomatis
+
+        $data['required_tests']    = $request->input('required_tests', []);
 
         $job->update($data);
 

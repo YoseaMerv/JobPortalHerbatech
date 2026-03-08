@@ -37,7 +37,7 @@ class JobController extends Controller
     {
         $categories = JobCategory::where('is_active', true)->get();
         $locations = JobLocation::where('is_active', true)->get();
-        
+
         return view('company.jobs.create', compact('categories', 'locations'));
     }
 
@@ -55,14 +55,18 @@ class JobController extends Controller
             'job_type' => 'required|in:full_time,part_time,contract,freelance,internship',
             'description' => 'required|string',
             'requirements' => 'required|string',
+            'responsibilities' => 'nullable|string',
             'salary_currency' => 'required|string|max:3',
             'salary_min' => 'nullable|numeric|min:0',
             'salary_max' => 'nullable|numeric|min:0|gte:salary_min',
             'salary_type' => 'required|in:hourly,monthly,yearly,project',
             'experience_level' => 'required|string',
+            'education_level' => 'nullable|in:sd,smp,sma,d3,s1,s2,s3',
             'deadline' => 'required|date|after:today',
             'vacancy' => 'required|integer|min:1',
             'is_salary_visible' => 'nullable|boolean',
+            'required_tests'   => 'nullable|array',
+            'required_tests.*' => 'in:kraepelin,msdt,papi,disc',
         ]);
 
         $company = $this->getCompany();
@@ -77,15 +81,18 @@ class JobController extends Controller
             'job_type' => $request->job_type,
             'description' => $request->description,
             'requirements' => $request->requirements,
+            'responsibilities' => $request->responsibilities,
             'salary_currency' => $request->salary_currency,
             'salary_min' => $request->salary_min,
             'salary_max' => $request->salary_max,
             'salary_type' => $request->salary_type,
             'is_salary_visible' => $request->has('is_salary_visible'), // Logika checkbox
             'experience_level' => $request->experience_level,
+            'education_level' => $request->education_level,
             'deadline' => $request->deadline,
             'vacancy' => $request->vacancy,
-            'status' => 'published', 
+            'status' => 'published',
+            'required_tests' => $request->input('required_tests', []),
         ]);
 
         return redirect()->route('company.jobs.index')
@@ -108,7 +115,7 @@ class JobController extends Controller
     {
         $categories = JobCategory::where('is_active', true)->get();
         $locations = JobLocation::where('is_active', true)->get();
-        
+
         return view('company.jobs.edit', compact('job', 'categories', 'locations'));
     }
 
@@ -126,15 +133,19 @@ class JobController extends Controller
             'job_type' => 'required|in:full_time,part_time,contract,freelance,internship',
             'description' => 'required|string',
             'requirements' => 'required|string',
+            'responsibilities' => 'nullable|string',
             'salary_min' => 'nullable|numeric|min:0',
             'salary_max' => 'nullable|numeric|min:0|gte:salary_min',
             'salary_type' => 'required|in:hourly,monthly,yearly,project',
             'experience_level' => 'required|string',
-            'deadline' => 'required|date', 
+            'education_level' => 'nullable|in:sd,smp,sma,d3,s1,s2,s3',
+            'deadline' => 'required|date',
             'vacancy' => 'required|integer|min:1',
             'status' => 'required|in:draft,published,closed,expired',
             'is_salary_visible' => 'nullable|boolean',
-        ],[
+            'required_tests'   => 'nullable|array',
+            'required_tests.*' => 'in:kraepelin,msdt,papi,disc',
+        ], [
             'department.required' => 'Nama Departemen tidak boleh dikosongkan.',
             'vacancy.required' => 'Jumlah lowongan wajib diisi.',
             'vacancy.min' => 'Jumlah lowongan harus minimal 1.',
@@ -151,13 +162,16 @@ class JobController extends Controller
             'job_type' => $request->job_type,
             'description' => $request->description,
             'requirements' => $request->requirements,
+            'responsibilities' => $request->responsibilities,
             'salary_min' => $request->salary_min,
             'salary_max' => $request->salary_max,
             'salary_type' => $request->salary_type,
-            'is_salary_visible' => $request->has('is_salary_visible'), 
+            'is_salary_visible' => $request->has('is_salary_visible'),
             'experience_level' => $request->experience_level,
+            'education_level' => $request->education_level,
             'vacancy' => $request->vacancy,
             'status' => $request->status,
+            'required_tests' => $request->input('required_tests', []),
         ]);
 
         return redirect()->route('company.jobs.index')
@@ -173,7 +187,7 @@ class JobController extends Controller
         return redirect()->route('company.jobs.index')
             ->with('success', 'Lowongan pekerjaan berhasil dihapus.');
     }
-    
+
     /**
      * Menutup lowongan secara cepat dari index.
      */

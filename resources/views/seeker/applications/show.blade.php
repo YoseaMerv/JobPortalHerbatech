@@ -107,13 +107,17 @@
                         <span class="badge bg-warning text-dark rounded-pill">Wajib Diselesaikan</span>
                         @endif
                     </div>
-                    <p class="text-muted small mb-4">Selesaikan rangkaian tes psikologi di bawah ini. Status lamaran akan berubah otomatis setelah keempat tes selesai.</p>
+                    <p class="text-muted small mb-4">Selesaikan rangkaian tes psikologi di bawah ini. Status lamaran akan berubah otomatis setelah tes wajib selesai.</p>
 
                     <div class="d-flex flex-column gap-3">
 
                         @php
-                        // Ambil data hasil tes psikotes untuk pengecekan status
+                        // Ambil data hasil tes psikotes
                         $results = $application->psychologicalResults;
+
+                        // Ambil daftar tes yang diwajibkan oleh HR dari Database
+                        // Jika data lama belum ada (null), kita defaultkan muncul semua agar tidak error
+                        $requiredTests = $application->job->required_tests ?? ['kraepelin', 'disc', 'msdt', 'papi'];
 
                         $tests = [
                         [
@@ -156,6 +160,8 @@
                         @endphp
 
                         @foreach($tests as $test)
+                        {{-- LOGIKA UTAMA: Filter/Sembunyikan tes yang tidak dicentang oleh HR --}}
+                        @if(in_array($test['id'], $requiredTests))
                         <div class="assessment-card d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 {{ $test['is_done'] ? 'bg-light opacity-75' : '' }}">
                             <div class="d-flex align-items-center gap-3">
                                 <div class="assessment-icon bg-{{ $test['color'] }} bg-opacity-10 text-{{ $test['color'] }}">
@@ -178,7 +184,15 @@
                                 @endif
                             </div>
                         </div>
+                        @endif
                         @endforeach
+
+                        {{-- Pesan jika HR tidak mewajibkan tes apa pun --}}
+                        @if(empty($requiredTests))
+                        <div class="alert alert-info border-0 shadow-sm text-center">
+                            <i class="fas fa-info-circle me-2"></i> Tidak ada tes psikologi yang diwajibkan untuk posisi ini.
+                        </div>
+                        @endif
 
                     </div>
                 </div>
@@ -192,29 +206,28 @@
                     <div class="d-flex align-items-center justify-content-between mb-3">
                         <h5 class="fw-bold text-dark mb-0">
                             @if($application->status === 'interview')
-                                <i class="fas fa-comments text-primary me-2"></i> Informasi Wawancara
+                            <i class="fas fa-comments text-primary me-2"></i> Informasi Wawancara
                             @elseif($application->status === 'accepted')
-                                <i class="fas fa-envelope-open-text text-success me-2"></i> Surat Keputusan (Diterima)
+                            <i class="fas fa-envelope-open-text text-success me-2"></i> Surat Keputusan (Diterima)
                             @else
-                                <i class="fas fa-envelope-open-text text-danger me-2"></i> Surat Keputusan (Ditolak)
+                            <i class="fas fa-envelope-open-text text-danger me-2"></i> Surat Keputusan (Ditolak)
                             @endif
                         </h5>
                     </div>
-                    
+
                     @php
-                        // Menentukan warna dan ikon berdasarkan status
-                        $noteColor = match($application->status) {
-                            'interview' => 'primary',
-                            'accepted' => 'success',
-                            'rejected' => 'danger',
-                            default => 'secondary'
-                        };
-                        $noteIcon = match($application->status) {
-                            'interview' => 'fa-calendar-check',
-                            'accepted' => 'fa-handshake',
-                            'rejected' => 'fa-times-circle',
-                            default => 'fa-info-circle'
-                        };
+                    $noteColor = match($application->status) {
+                    'interview' => 'primary',
+                    'accepted' => 'success',
+                    'rejected' => 'danger',
+                    default => 'secondary'
+                    };
+                    $noteIcon = match($application->status) {
+                    'interview' => 'fa-calendar-check',
+                    'accepted' => 'fa-handshake',
+                    'rejected' => 'fa-times-circle',
+                    default => 'fa-info-circle'
+                    };
                     @endphp
 
                     <div class="p-4 border border-{{ $noteColor }} border-opacity-25 rounded-4 shadow-sm" style="background-color: #f8fafc;">
@@ -225,17 +238,17 @@
                             <div class="flex-grow-1">
                                 <h6 class="fw-bold text-dark mb-2">Pesan / Keputusan dari HRD:</h6>
                                 @if($application->notes)
-                                    <div class="p-3 bg-white border rounded-3 text-dark mb-0 shadow-sm" style="white-space: pre-line; line-height: 1.6; font-size: 0.95rem;">
-                                        {!! nl2br(e($application->notes)) !!}
-                                    </div>
+                                <div class="p-3 bg-white border rounded-3 text-dark mb-0 shadow-sm" style="white-space: pre-line; line-height: 1.6; font-size: 0.95rem;">
+                                    {!! nl2br(e($application->notes)) !!}
+                                </div>
                                 @else
-                                    <div class="p-3 bg-white border rounded-3 text-muted fst-italic mb-0" style="font-size: 0.95rem;">
-                                        @if($application->status === 'interview')
-                                            HRD belum mencantumkan detail jadwal wawancara di sini. Silakan tunggu informasi lebih lanjut atau periksa kotak masuk email Anda.
-                                        @else
-                                            Tidak ada pesan tambahan dari HRD.
-                                        @endif
-                                    </div>
+                                <div class="p-3 bg-white border rounded-3 text-muted fst-italic mb-0" style="font-size: 0.95rem;">
+                                    @if($application->status === 'interview')
+                                    HRD belum mencantumkan detail jadwal wawancara di sini. Silakan tunggu informasi lebih lanjut atau periksa kotak masuk email Anda.
+                                    @else
+                                    Tidak ada pesan tambahan dari HRD.
+                                    @endif
+                                </div>
                                 @endif
                             </div>
                         </div>
@@ -249,7 +262,6 @@
                 <div class="pt-2">
                     <h6 class="text-muted text-uppercase small ls-1 mb-3 fw-bold"><i class="fas fa-folder-open me-2"></i>Dokumen Terlampir</h6>
                     <div class="row g-3">
-                        {{-- File CV --}}
                         <div class="col-md-6">
                             <div class="p-3 border rounded-4 bg-light d-flex align-items-center hover-shadow">
                                 <div class="icon-box bg-danger-subtle text-danger rounded-3 p-3 me-3 flex-shrink-0 d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; background-color: #fee2e2;">
@@ -268,7 +280,6 @@
                             </div>
                         </div>
 
-                        {{-- File Cover Letter --}}
                         <div class="col-md-6">
                             <div class="p-3 border rounded-4 bg-light d-flex align-items-center hover-shadow">
                                 <div class="icon-box bg-primary-subtle text-primary rounded-3 p-3 me-3 flex-shrink-0 d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; background-color: #e0e7ff;">
@@ -288,6 +299,7 @@
                         </div>
                     </div>
                 </div>
+
                 @if($application->status === 'pending')
                 <div class="mt-5 pt-4 border-top text-center">
                     <form action="{{ route('seeker.applications.destroy', $application->id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menarik lamaran ini? Tindakan ini tidak dapat dibatalkan dan HRD tidak akan lagi melihat lamaran Anda.');">
