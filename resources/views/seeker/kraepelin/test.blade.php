@@ -190,7 +190,7 @@
     const submitUrl = "{{ route('seeker.kraepelin.submit', ':testId') }}".replace(':testId', testId);
     
     // Konfigurasi Tes
-    const columnTimeLimit =30; // 30 detik per kolom
+    const columnTimeLimit =1; // 30 detik per kolom
     const storageKey = `kraepelin_progress_${testId}`;
     
     let currentCol = 0;

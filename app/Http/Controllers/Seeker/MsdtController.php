@@ -33,7 +33,6 @@ class MsdtController extends Controller
         $durationInMinutes = 30; // Durasi tes MSDT (30 Menit)
         $endTime = \Carbon\Carbon::parse($testResult->started_at)->addMinutes($durationInMinutes);
         $remainingSeconds = \Carbon\Carbon::now()->diffInSeconds($endTime, false);
-        // ==================================
 
         // Update status lamaran ke sedang mengerjakan
         $application->update(['status' => JobApplication::STATUS_TEST_IN_PROGRESS]);
